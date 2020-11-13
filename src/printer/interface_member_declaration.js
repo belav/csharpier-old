@@ -51,7 +51,7 @@ function print(path, options, print) {
             const typeParameterList = getAny(node, "type_parameter_list");
             const typeParameterConstraintsClauses = getAny(node, "type_parameter_constraints_clauses");
 
-            declarationPart.push(type ? path.call(print, type, 0) : "void", line);
+            declarationPart.push(type ? path.call(print, type, 0) : "void", " ");
 
             declarationPart.push(identifierDocs);
 
