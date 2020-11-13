@@ -1,7 +1,3 @@
-<p align="center">
-    :construction: Work in Progress! :construction:
-</p>
-
 <div align="center">
 <img alt="Prettier"
   src="https://cdn.rawgit.com/prettier/prettier-logo/master/images/prettier-icon-light.svg">
@@ -11,7 +7,7 @@
   src="https://upload.wikimedia.org/wikipedia/commons/4/4f/Csharp_Logo.png">
 </div>
 
-<h2 align="center">Prettier C# Plugin</h2>
+<h2 align="center">CSharpier</h2>
 
 <p align="center">
   <a href="https://gitter.im/jlongster/prettier">
@@ -33,18 +29,16 @@
 
 ## Intro
 
-Prettier C# adds C# support to the [Prettier](https://github.com/prettier/prettier) code formatter. Like Prettier, it is opinionated and restricts style options to a minimum. It runs where Prettier runs, including CI and pre-commit hooks.
+CSharpier adds C# support to the [Prettier](https://github.com/prettier/prettier) code formatter. Like Prettier, it is opinionated and restricts style options to a minimum. It runs where Prettier runs, including CI and pre-commit hooks.
 
 ## WORK IN PROGRESS
 
 Please note that this plugin is under active development, and might not be ready to run on production code yet. **It will break your code.**
 
-Preview the result with this [diff example](https://github.com/warrenseine/prettier-csharp-demo/pull/1/commits/8652271a499740b726e6342346e97447abd23162).
-
 ## Install
 
 ```bash
-yarn add --dev --exact prettier prettier-plugin-csharp
+npm add --dev --exact prettier csharpier
 ```
 
 ## Use
@@ -64,7 +58,7 @@ The plugin is written in JavaScript. It depends on the JavaScript port of ANTLR 
 Use your favorite Node package manager:
 
 ```bash
-yarn
+npm install
 ```
 
 ### Updating the grammar
@@ -76,13 +70,13 @@ The grammar supports C# 6 as a baseline, and tries to catch up with recent addit
 - Fetch a local copy of ANTLR:
 
 ```bash
-yarn fetch-antlr
+npm run fetch-antlr
 ```
 
 - Generate the JavaScript parser:
 
 ```bash
-yarn generate-parser
+npm run generate-parser
 ```
 
 ### Testing
@@ -92,27 +86,11 @@ The project is developed against a single grammar-complete regression test. Ther
 Run the test with:
 
 ```bash
-yarn test
+npm run test
 ```
 
 To test it out on an actual C# file:
 
 - Clone this repository.
-- Run `yarn`.
-- Run `yarn prettier Your/File.cs` to check the output.
-
-## Maintainers
-
-<table>
-  <tbody>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/warrenseine">
-          <img width="150" height="150" src="https://github.com/warrenseine.png?v=3&s=150">
-          </br>
-          Warren Seine
-        </a>
-      </td>
-    </tr>
-  <tbody>
-</table>
+- Run `npm install`.
+- Run `npm run prettier Your/File.cs` to check the output.

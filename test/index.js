@@ -1,11 +1,14 @@
 const prettier = require("prettier");
 const fs = require("fs");
+const path = require("path");
 
-const tests = ["AllInOne"];
+fs.readdirSync(__dirname).forEach(file => {
+   if (!file.endsWith(".cs") || file.endsWith(".Formatted.cs")) {
+       return
+   }
 
-for (let test of tests) {
-    const referenceFile = `test/${test}.cs`;
-    const formattedFile = `test/${test}.Formatted.cs`;
+    const referenceFile = path.join(__dirname, file);
+    const formattedFile = referenceFile.replace(".cs", ".Formatted.cs");
 
     const referenceCode = fs.readFileSync(referenceFile, "utf8");
 
@@ -15,4 +18,4 @@ for (let test of tests) {
     });
 
     fs.writeFileSync(formattedFile, formattedCode, "utf8");
-}
+});
