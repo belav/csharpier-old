@@ -4,34 +4,34 @@ const parser = require("./parser");
 const printer = require("./printer");
 
 const languages = [
-  {
-    name: "C#",
-    parsers: ["cs"],
-    tmScope: "source.cs",
-    aceMode: "csharp",
-    codemirrorMode: "clike",
-    extensions: [".cs", ".cake", ".cshtml", ".csx"],
-    vscodeLanguageIds: ["csharp"],
-    linguistLanguageId: 42
-  }
+    {
+        name: "C#",
+        parsers: ["cs"],
+        tmScope: "source.cs",
+        aceMode: "csharp",
+        codemirrorMode: "clike",
+        extensions: [".cs", ".cake", ".cshtml", ".csx"],
+        vscodeLanguageIds: ["csharp"],
+        linguistLanguageId: 42,
+    },
 ];
 
 const parsers = {
-  cs: parser
+    cs: parser,
 };
 
 const printers = {
-  cs: printer
+    cs: printer,
 };
 
 const options = {};
 
 module.exports = {
-  languages,
-  printers,
-  parsers,
-  options,
-  defaultOptions: {
-    tabWidth: 4
-  }
+    languages,
+    printers,
+    parsers,
+    options,
+    defaultOptions: {
+        tabWidth: 4,
+    },
 };

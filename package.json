@@ -1,9 +1,9 @@
 {
-  "name": "prettier-plugin-csharp",
-  "version": "0.6.0-development",
+  "name": "csharpier",
+  "version": "0.7.0-development",
   "description": "Prettier C# Plugin",
-  "repository": "warrenseine/prettier-plugin-csharp",
-  "author": "Warren Seine <@warrenseine>",
+  "repository": "belav/csharpier",
+  "author": "Bela VanderVoort",
   "license": "MIT",
   "main": "src",
   "dependencies": {
@@ -13,30 +13,12 @@
     "prettier": "^1.15.3"
   },
   "scripts": {
-    "format": "prettier --write \"{src,test}/**/*.js\"",
-    "lint": "eslint src/**",
+    "prettier": "prettier --write \"{src,test}/**/*.js\"",
     "test:debug": "node --lazy --inspect-brk test",
     "test": "node test && git diff --exit-code -- test/*.Formatted.cs",
     "fetch-antlr": "node fetch",
     "generate-parser": "java -jar bin/antlr-4.7.2-complete.jar -Dlanguage=JavaScript src/csharp/*.g4",
-    "prettier": "prettier --plugin=. --parser=cs",
-    "prettier:debug": "node --lazy --inspect-brk src/debug.js"
-  },
-  "devDependencies": {
-    "eslint": "^5.11.1",
-    "eslint-config-prettier": "^3.3.0",
-    "husky": "^1.3.1",
-    "lint-staged": "^8.1.0"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.{js,json,css,md}": [
-      "prettier --write",
-      "git add"
-    ]
+    "csharpier": "prettier --plugin=. --parser=cs",
+    "csharpier:debug": "node --lazy --inspect-brk src/debug.js"
   }
 }
