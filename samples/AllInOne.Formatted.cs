@@ -523,8 +523,7 @@ namespace My.Moy
 
         string Value { get; set; }
 
-        unsafe void
-        UpdateSignatureByHashingContent(
+        unsafe void UpdateSignatureByHashingContent(
             [In] byte* buffer, int size
         );
     }
