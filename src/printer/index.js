@@ -1,17 +1,8 @@
 "use strict";
 
-const docBuilders = require("prettier").doc.builders;
+const { isType, isSymbol, getAll, getAny } = require("./helpers");
+const { concat, join, hardline, line, softline, trim, group, conditionalGroup, indent, dedentToRoot } = require("prettier").doc.builders;
 const util = require("prettier").util;
-const concat = docBuilders.concat;
-const join = docBuilders.join;
-const hardline = docBuilders.hardline;
-const line = docBuilders.line;
-const softline = docBuilders.softline;
-const trim = docBuilders.trim;
-const group = docBuilders.group;
-const conditionalGroup = docBuilders.conditionalGroup;
-const indent = docBuilders.indent;
-const dedentToRoot = docBuilders.dedentToRoot;
 const doublehardline = concat([hardline, hardline]);
 const empty = "";
 
@@ -1272,84 +1263,6 @@ function printInterfaceDefinition(path, options, print) {
     return group(concat([group(concat(interfaceHead)), line, path.call(print, "interface_body", 0)]));
 }
 
-function printInterfaceMemberDeclaration(path, options, print) {
-    const node = path.getValue();
-    const docs = [];
-
-    const isNew = node.children.find(node => isSymbol(node, "new"));
-    const isEvent = node.children.find(node => isSymbol(node, "event"));
-    const isUnsafe = node.children.find(node => isSymbol(node, "unsafe"));
-    const identifierDocs = path.call(print, "identifier", 0);
-    const attributes = getAny(node, "attributes");
-    const type = getAny(node, "type");
-    const interfaceAccessors = getAny(node, "interface_accessors");
-    const formalParameterList = getAny(node, "formal_parameter_list");
-
-    if (attributes) {
-        docs.push(path.call(print, attributes, 0), hardline);
-    }
-
-    const declarationPart = [];
-
-    if (isNew) {
-        declarationPart.push("new", " ");
-    }
-
-    if (isEvent) {
-        declarationPart.push("event", " ");
-        declarationPart.push(path.call(print, type, 0), line, identifierDocs, ";");
-    } else {
-        if (isUnsafe) {
-            declarationPart.push("unsafe", " ");
-        }
-
-        if (interfaceAccessors) {
-            declarationPart.push(path.call(print, type, 0), line);
-
-            if (identifierDocs) {
-                declarationPart.push(identifierDocs, line);
-            } else if (formalParameterList) {
-                declarationPart.push("this", "[");
-                declarationPart.push(indent(concat([softline, path.call(print, formalParameterList, 0)])));
-                declarationPart.push("]", line);
-            }
-
-            declarationPart.push(
-                group(concat(["{", indent(concat([line, path.call(print, interfaceAccessors, 0)])), line, "}"])),
-            );
-        } else {
-            const typeParameterList = getAny(node, "type_parameter_list");
-            const typeParameterConstraintsClauses = getAny(node, "type_parameter_constraints_clauses");
-
-            declarationPart.push(type ? path.call(print, type, 0) : "void", line);
-
-            declarationPart.push(identifierDocs);
-
-            if (typeParameterList) {
-                declarationPart.push(path.call(print, typeParameterList, 0));
-            }
-
-            declarationPart.push("(");
-
-            if (formalParameterList) {
-                declarationPart.push(indent(concat([softline, path.call(print, formalParameterList, 0)])), softline);
-            }
-
-            declarationPart.push(")");
-
-            if (typeParameterConstraintsClauses) {
-                declarationPart.push(indent(concat([line, path.call(print, typeParameterConstraintsClauses, 0)])));
-            }
-
-            declarationPart.push(";");
-        }
-    }
-
-    docs.push(group(concat(declarationPart)));
-
-    return group(concat(docs));
-}
-
 function printTypeParameterList(path, options, print) {
     const node = path.getValue();
     const typeParameters = getAny(node, ["type_parameter", "variant_type_parameter"]);
@@ -1414,8 +1327,8 @@ function printDelegateDefinition(path, options, print) {
                                 ),
                                 typeParameterConstraintsClauses
                                     ? indent(
-                                          group(concat([line, path.call(print, typeParameterConstraintsClauses, 0)])),
-                                      )
+                                    group(concat([line, path.call(print, typeParameterConstraintsClauses, 0)])),
+                                    )
                                     : softline,
                             ]),
                         ),
@@ -3015,7 +2928,7 @@ function printNode(path, options, print) {
         case "interface_definition":
             return printInterfaceDefinition(path, options, print);
         case "interface_member_declaration":
-            return printInterfaceMemberDeclaration(path, options, print);
+            return require("./interface_member_declaration")(path, options, print);
         case "type_parameter_list":
         case "variant_type_parameter_list":
             return printTypeParameterList(path, options, print);
@@ -3248,20 +3161,6 @@ function printNode(path, options, print) {
     }
 }
 
-function getAll(node, types) {
-    if (typeof types === "string") {
-        return node[types] ? [types] : [];
-    }
-    return types.filter(type => node[type]);
-}
-
-function getAny(node, types) {
-    if (typeof types === "string") {
-        return node[types] ? types : undefined;
-    }
-    return types.find(type => node[type]);
-}
-
 function getDescendant(node, path) {
     const pathAccessorRegex = /^([a-zA-Z_]+)(\[([0-9])\])?$/;
     const pathParts = path.split(".");
@@ -3286,14 +3185,6 @@ function getDescendant(node, path) {
     }
 
     return currentNode;
-}
-
-function isSymbol(node, symbol) {
-    return isType(node, "terminal") && node.value === symbol;
-}
-
-function isType(node, type) {
-    return node && node.nodeType === type;
 }
 
 // eslint-disable-next-line no-unused-vars

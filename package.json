@@ -7,18 +7,22 @@
   "license": "MIT",
   "main": "src",
   "dependencies": {
-    "antlr4": "^4.7.2",
-    "is-alphanumerical": "^1.0.2",
-    "lodash": "^4.17.11",
-    "prettier": "^1.15.3"
+    "antlr4": "4.7.2",
+    "is-alphanumerical": "1.0.2",
+    "lodash": "4.17.20",
+    "prettier": "1.15.3"
   },
   "scripts": {
     "prettier": "prettier --write \"{src,test}/**/*.js\"",
-    "test:debug": "node --lazy --inspect-brk test",
-    "test": "node test && git diff --exit-code -- test/*.Formatted.cs",
+    "test": "jest",
+    "test:old:debug": "node --lazy --inspect-brk test",
+    "test:old": "node test && git diff --exit-code -- test/*.Formatted.cs",
     "fetch-antlr": "node fetch",
     "generate-parser": "java -jar bin/antlr-4.7.2-complete.jar -Dlanguage=JavaScript src/csharp/*.g4",
     "csharpier": "prettier --plugin=. --parser=cs",
     "csharpier:debug": "node --lazy --inspect-brk src/debug.js"
+  },
+  "devDependencies": {
+    "jest": "26.6.3"
   }
 }
