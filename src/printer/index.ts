@@ -2086,12 +2086,12 @@ function printGenericDimensionSpecifier(path) {
 
 function printCapturingStatement(path, options, print) {
     const node = path.getValue();
-    const capturedExpressions = getAll(node, [
+    const capturedExpressions = getAll(node,
         "expression",
         "resource_acquisition",
         "pointer_type",
         "fixed_pointer_declarators",
-    ]);
+    );
     const embeddedStatement = getDescendant(node, "embedded_statement");
     const hasBraces = !!getAny(embeddedStatement, "block");
 

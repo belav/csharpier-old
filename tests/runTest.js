@@ -6,7 +6,13 @@ function runTest(directory, name) {
     const codePath = path.resolve(directory, name + ".cs")
     const code = fs.readFileSync(codePath, "utf8");
 
-    const expected = fs.readFileSync(codePath.replace(".cs", ".expected.cs"), "utf8");
+    const expectedPath = codePath.replace(".cs", ".expected.cs")
+
+    if (!fs.existsSync(expectedPath)) {
+        fs.writeFileSync(expectedPath, code, "utf8");
+    }
+
+    const expected = fs.readFileSync(expectedPath, "utf8");
 
     const actualCode = prettier.format(code, {
         parser: "cs",
