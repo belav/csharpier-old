@@ -29,6 +29,7 @@ export const print: PrintType = (path, options, print) => {
     }
 
     if (commonMemberDeclaration) {
+        // @ts-ignore
         const declaration = getAny(node[commonMemberDeclaration][0], "method_declaration", "typed_member_declaration");
 
         if (declaration === "method_declaration") {

@@ -1,19 +1,10 @@
 import { Doc, FastPath, ParserOptions } from "prettier";
+import { NodeType } from "./NodeTypes";
 
-interface NodeType {
-    nodeType: string,
-    start: number,
-    end: number,
-    lineStart: number,
-    lineEnd: number,
-    value?: string,
-    embedded_statement?: any,
-}
-
-export type PrintType = (
-    path: FastPath<NodeType>,
-    options: ParserOptions<NodeType>,
-    print: (path: FastPath<NodeType>) => Doc,
+export type PrintType<T = NodeType> = (
+    path: FastPath<T>,
+    options: ParserOptions<T>,
+    print: (path: FastPath<T>) => Doc,
 ) => Doc;
 
 export function isSymbol(node: NodeType, symbol: string) {
@@ -25,9 +16,11 @@ export function isType(node: NodeType, type: string) {
 }
 
 export function getAll(node: NodeType, ...types: string[]) {
+    // @ts-ignore
     return types.filter(type => node[type]);
 }
 
 export function getAny(node: NodeType, ...types: string[]) {
+    // @ts-ignore
     return types.find(type => node[type]);
 }

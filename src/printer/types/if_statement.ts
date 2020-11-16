@@ -1,12 +1,12 @@
 import { doc, Doc } from "prettier";
 import { concat, group, hardline, indent, line, softline } from "../builders";
 import { PrintType } from "../helpers";
+import { IfStatement } from "../NodeTypes";
 import Concat = doc.builders.Concat;
 
-export const print: PrintType = (path, options, print) => {
+export const print: PrintType<IfStatement> = (path, options, print) => {
     const node = path.getValue();
 
-    console.log(node);
     const expression = path.call(print, "expression", 0);
     const ifBodies = path.map(print, "embedded_statement");
     const hasElse = ifBodies.length > 1;
