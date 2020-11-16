@@ -1,7 +1,7 @@
 const { printDanglingComments } = require("./comments");
 const { getAny } = require("./helpers");
 
-const { indent, concat, hardline } = require("prettier").doc.builders;
+const { indent, concat, hardline, line, softline } = require("prettier").doc.builders;
 
 function print(path, options, print) {
     const node = path.getValue();
@@ -15,10 +15,16 @@ function print(path, options, print) {
         docs.push(indent(concat([hardline, path.call(print, statementList, 0)])));
     }
 
-    docs.push(printDanglingComments(path, options));
+    const danglingComments = printDanglingComments(path, options);
+    if (danglingComments) {
+        docs.push(danglingComments);
+    }
 
-    // TODO Decide whether we want a `hardline` or a `line` (which would inline empty blocks like `int F() { }`).
-    docs.push(hardline, "}");
+    if (docs.length === 1) {
+        docs.push("}");
+    } else {
+        docs.push(hardline, "}");
+    }
 
     return concat(docs);
 }

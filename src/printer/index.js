@@ -2251,6 +2251,7 @@ function printResourceAcquisition(path, options, print) {
     return path.call(print, "children", 0);
 }
 
+// TODO empty try/catch put braces on new line
 function printTryStatement(path, options, print) {
     const node = path.getValue();
     const block = path.call(print, "block", 0);
