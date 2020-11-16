@@ -15,7 +15,7 @@ fs.readdirSync(__dirname).forEach(file => {
     const formattedCode = prettier.format(referenceCode, {
         parser: "cs",
         plugins: ["."],
-        loglevel: "debug",
+        endOfLine: "auto",
     });
 
     fs.writeFileSync(formattedFile, formattedCode, "utf8");

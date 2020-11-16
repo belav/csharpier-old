@@ -11,6 +11,7 @@ function runTest(directory, name) {
     const actualCode = prettier.format(code, {
         parser: "cs",
         plugins: ["."],
+        endOfLine: "auto",
     });
 
     fs.writeFileSync(codePath.replace(".cs", ".actual.cs"), actualCode, "utf8");
