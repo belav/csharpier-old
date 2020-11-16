@@ -1,13 +1,17 @@
-const { getAny, isSymbol } = require("./helpers");
+import { getAny, isSymbol } from "../helpers";
+import { doc } from "prettier";
 
-const { indent, softline, group, concat, line } = require("prettier").doc.builders;
+const { indent, softline, group, concat, line, hardline } = doc.builders;
 
-function print(path, options, print) {
+export function print(path: any, options: any, print: any) {
     const node = path.getValue();
     const docs = [];
 
+    // @ts-ignore
     const isNew = node.children.find(node => isSymbol(node, "new"));
+    // @ts-ignore
     const isEvent = node.children.find(node => isSymbol(node, "event"));
+    // @ts-ignore
     const isUnsafe = node.children.find(node => isSymbol(node, "unsafe"));
     const identifierDocs = path.call(print, "identifier", 0);
     const attributes = getAny(node, "attributes");
@@ -79,5 +83,3 @@ function print(path, options, print) {
 
     return group(concat(docs));
 }
-
-module.exports = print;

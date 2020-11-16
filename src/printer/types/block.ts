@@ -1,9 +1,10 @@
-const { printDanglingComments } = require("./comments");
-const { getAny } = require("./helpers");
+import { printDanglingComments } from "../comments";
+import { getAny } from "../helpers";
+import { doc } from "prettier";
 
-const { indent, concat, hardline, line, softline } = require("prettier").doc.builders;
+const { indent, concat, hardline } = doc.builders;
 
-function print(path, options, print) {
+export function print(path: any, options: any, print: any) {
     const node = path.getValue();
     const docs = [];
 
@@ -28,5 +29,3 @@ function print(path, options, print) {
 
     return concat(docs);
 }
-
-module.exports = print;

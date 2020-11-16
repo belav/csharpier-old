@@ -1,10 +1,11 @@
-"use strict";
+// @ts-nocheck
 
-const antlr4 = require("antlr4");
-const { ErrorListener } = require("antlr4/error/ErrorListener");
-const CSharpLexer = require("./csharp/CSharpLexer");
-const CSharpParser = require("./csharp/CSharpParser");
-const _ = require("lodash");
+import { CommonTokenStream, InputStream } from "antlr4";
+import { ErrorListener } from "antlr4/error";
+import * as CSharpLexer from "./csharp/CSharpLexer";
+import * as CSharpParser from "./csharp/CSharpParser";
+import { snakeCase } from "lodash";
+
 
 class ThrowingErrorListener extends ErrorListener {
     syntaxError(recognizer, offendingSymbol, line, column, msg, e) {
@@ -21,12 +22,12 @@ class ThrowingErrorListener extends ErrorListener {
 
 function parseCSharp(text) {
     const errorListener = new ThrowingErrorListener();
-    const chars = new antlr4.InputStream(text);
+    const chars = new InputStream(text);
     const lexer = new CSharpLexer.CSharpLexer(chars);
     lexer.removeErrorListeners();
     lexer.addErrorListener(errorListener);
 
-    const tokens = new antlr4.CommonTokenStream(lexer);
+    const tokens = new CommonTokenStream(lexer);
     const parser = new CSharpParser.CSharpParser(tokens);
     parser.removeErrorListeners();
     parser.addErrorListener(errorListener);
@@ -67,7 +68,7 @@ function buildComment(token) {
 const nodeNameRegex = /Context$|NodeImpl$/;
 
 function simplifyTree(node) {
-    const nodeType = _.snakeCase(node.constructor.name.replace(nodeNameRegex, ""));
+    const nodeType = snakeCase(node.constructor.name.replace(nodeNameRegex, ""));
 
     if (!node.children) {
         if (node.symbol) {
@@ -111,9 +112,11 @@ function loc(prop) {
     };
 }
 
-module.exports = {
+const defaultExport = {
     parse: parseCSharp,
     astFormat: "cs",
     locStart: loc("start"),
     locEnd: loc("end"),
 };
+
+export default defaultExport;

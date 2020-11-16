@@ -1,7 +1,8 @@
-const { concat, join, hardline, trim, indent, dedentToRoot } = require("prettier").doc.builders;
-const util = require("prettier").util;
+import { Doc, doc, util } from "prettier";
 
-function printComment(path, options) {
+const { concat, join, hardline, trim, indent, dedentToRoot } = doc.builders;
+
+export function printComment(path: any, options: any) {
     const node = path.getValue();
 
     node.printed = true;
@@ -25,14 +26,15 @@ function printComment(path, options) {
     }
 }
 
-function printDanglingComments(path, options) {
-    const parts = [];
+export function printDanglingComments(path: any, options: any) {
+    const parts: Doc[] = [];
     const node = path.getValue();
 
     if (!node || !node.comments) {
         return "";
     }
 
+    // @ts-ignore
     path.each(commentPath => {
         const comment = commentPath.getValue();
 
@@ -48,14 +50,9 @@ function printDanglingComments(path, options) {
     return indent(concat([hardline, join(hardline, parts)]));
 }
 
-function isLastComment(path) {
+function isLastComment(path: any) {
     const stack = path.stack;
     const comments = stack[stack.length - 3];
     const currentComment = stack[stack.length - 1];
     return comments && comments[comments.length - 1] === currentComment;
-}
-
-module.exports = {
-    printComment,
-    printDanglingComments,
 }

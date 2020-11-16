@@ -1,28 +1,25 @@
-function isSymbol(node, symbol) {
+// TODO anys + ts-ignore
+
+export function isSymbol(node: any, symbol: any) {
     return isType(node, "terminal") && node.value === symbol;
 }
 
-function isType(node, type) {
+export function isType(node: any, type: any) {
     return node && node.nodeType === type;
 }
 
-function getAll(node, types) {
+export function getAll(node: any, types: any) {
     if (typeof types === "string") {
         return node[types] ? [types] : [];
     }
+    // @ts-ignore
     return types.filter(type => node[type]);
 }
 
-function getAny(node, types) {
+export function getAny(node: any, types: any) {
     if (typeof types === "string") {
         return node[types] ? types : undefined;
     }
+    // @ts-ignore
     return types.find(type => node[type]);
-}
-
-module.exports = {
-    isSymbol,
-    isType,
-    getAll,
-    getAny, 
 }

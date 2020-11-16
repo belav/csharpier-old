@@ -12,10 +12,11 @@
 **/.idea/**/applicationhost.config
 
 node_modules
-yarn-error.log
 .antlr
 bin
 
 src/csharp/*.interp
 src/csharp/*.tokens
 src/csharp/*.js
+
+dist

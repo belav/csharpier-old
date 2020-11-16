@@ -1,7 +1,5 @@
-"use strict";
-
-const parser = require("./parser");
-const printer = require("./printer");
+import parser from "./parser";
+import printer from "./printer";
 
 const languages = [
     {

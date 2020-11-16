@@ -1,14 +1,18 @@
-"use strict";
+// TODO find all ts-nochecks
+// TODO figure out how to deal with dist/csharp, it should be copied there? maybe auto gen then copy there? also would the src files get checked in?
+// TODO rename this to prettier-plugin-csharpier if I really release it, then prettier works with it automatically
 
-const { isType, isSymbol, getAll, getAny } = require("./helpers");
-const { printComment, printDanglingComments } = require("./comments");
-const { concat, join, hardline, line, softline, trim, group, conditionalGroup, indent, dedentToRoot } = require("prettier").doc.builders;
-const util = require("prettier").util;
+// @ts-nocheck
+import { printComment, printDanglingComments } from "./comments";
+import * as alphanumerical from "is-alphanumerical";
+import { doc, util } from "prettier";
+import { getAny, isSymbol, isType, getAll } from "./helpers";
+import * as _ from "lodash";
+import * as types from "./types";
+
+const { concat, join, hardline, line, softline, trim, group, conditionalGroup, indent, dedentToRoot } = doc.builders;
 const doublehardline = concat([hardline, hardline]);
 const empty = "";
-
-const alphanumerical = require("is-alphanumerical");
-const _ = require("lodash");
 
 function printCompilationUnit(path, options, print) {
     const node = path.getValue();
@@ -2877,11 +2881,11 @@ function printNode(path, options, print) {
         case "constant_declarator":
             return printConstantDeclarator(path, options, print);
         case "block":
-            return require("./block")(path, options, print);
+            return types[node.nodeType](path, options, print);
         case "interface_definition":
             return printInterfaceDefinition(path, options, print);
         case "interface_member_declaration":
-            return require("./interface_member_declaration")(path, options, print);
+            return types[node.nodeType](path, options, print);
         case "type_parameter_list":
         case "variant_type_parameter_list":
             return printTypeParameterList(path, options, print);
@@ -2967,7 +2971,7 @@ function printNode(path, options, print) {
         case "interpolated_string_expression":
             return printInterpolatedStringExpression(path, options, print);
         case "if_statement":
-            return require("./if_statement")(path, options, print);
+            return types[node.nodeType](path, options, print);
         case "return_statement":
         case "throw_statement":
         case "break_statement":
@@ -3178,7 +3182,7 @@ function handleOwnLineComments(comment /*, text, options, ast, isLastComment*/) 
     return false;
 }
 
-module.exports = {
+const defaultExport = {
     print: printNode,
     printComment,
     canAttachComment,
@@ -3187,3 +3191,5 @@ module.exports = {
         ownLine: handleOwnLineComments,
     },
 };
+
+export default defaultExport;
