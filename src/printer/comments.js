@@ -9,7 +9,7 @@ function printComment(path, options) {
     if (node.value.startsWith("//")) {
         return node.value.trimRight();
     } else if (node.value.startsWith("#")) {
-        const isPreviousLineEmpty = util.isPreviousLineEmpty(options.originalText, node, options);
+        const isPreviousLineEmpty = util.isPreviousLineEmpty(options.originalText, node, options.locStart);
         const isNextLineEmpty = util.isNextLineEmptyAfterIndex(options.originalText, options.locEnd(node) + 1);
         const docs = [];
         if (isPreviousLineEmpty) {
