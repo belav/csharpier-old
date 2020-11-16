@@ -70,6 +70,7 @@ namespace Insite.Spire.Services
             this.htmlRedirectPipeline = htmlRedirectPipeline;
         }
 
+        // TODO get the method stuff on the same line
         public RetrievePageResult
         GetPageByType(
             IUnitOfWork unitOfWork,
@@ -449,6 +450,7 @@ namespace Insite.Spire.Services
                 (urlParts.Length == 1 && urlParts[0].EqualsIgnoreCase("search"))
             )
             {
+                // TODO this formats really weirdly
                 return GetNodeIdByType(unitOfWork,
                 siteContext,
                 "ProductListPage");
@@ -697,6 +699,7 @@ namespace Insite.Spire.Services
             var displayUnpublishedContent =
                 this.contentModeProvider.DisplayUnpublishedContent;
 
+            // TODO this formats really weirdly
             return unitOfWork
                 .GetRepository<PageUrl>()
                 .GetTableAsNoTracking()

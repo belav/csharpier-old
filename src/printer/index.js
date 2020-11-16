@@ -1,6 +1,7 @@
 "use strict";
 
 const { isType, isSymbol, getAll, getAny } = require("./helpers");
+const { printComment, printDanglingComments } = require("./comments");
 const { concat, join, hardline, line, softline, trim, group, conditionalGroup, indent, dedentToRoot } = require("prettier").doc.builders;
 const util = require("prettier").util;
 const doublehardline = concat([hardline, hardline]);
@@ -1079,26 +1080,6 @@ function printBody(path, options, print) {
     return ";";
 }
 
-function printBlock(path, options, print) {
-    const node = path.getValue();
-    const docs = [];
-
-    docs.push("{");
-
-    const statementList = getAny(node, "statement_list");
-
-    if (statementList) {
-        docs.push(indent(concat([hardline, path.call(print, statementList, 0)])));
-    }
-
-    docs.push(printDanglingComments(path, options));
-
-    // FIXME: Decide whether we want a `hardline` or a `line` (which would inline empty blocks like `int F() { }`).
-    docs.push(hardline, "}");
-
-    return concat(docs);
-}
-
 function printFormalParameterList(path, options, print) {
     const node = path.getValue();
     const parameters = getAll(node, ["fixed_parameters", "parameter_array"]);
@@ -1396,7 +1377,7 @@ function printAssignment(path, options, print) {
     const operator = path.call(print, "assignment_operator", 0);
     const right = path.call(print, "expression", 0);
 
-    // FIXME: Refine logic so member expression chains or conditional expressions can break.
+    // TODO Refine logic so member expression chains or conditional expressions can break.
     const canBreak = canAssignmentBreak(path.getValue());
 
     return group(
@@ -2895,7 +2876,7 @@ function printNode(path, options, print) {
         case "constant_declarator":
             return printConstantDeclarator(path, options, print);
         case "block":
-            return printBlock(path, options, print);
+            return require("./block")(path, options, print);
         case "interface_definition":
             return printInterfaceDefinition(path, options, print);
         case "interface_member_declaration":
@@ -3166,37 +3147,6 @@ function debugAtLine(node, line) {
     }
 }
 
-function isLastComment(path) {
-    const stack = path.stack;
-    const comments = stack[stack.length - 3];
-    const currentComment = stack[stack.length - 1];
-    return comments && comments[comments.length - 1] === currentComment;
-}
-
-function printComment(path, options) {
-    const node = path.getValue();
-
-    node.printed = true;
-
-    if (node.value.startsWith("//")) {
-        return node.value.trimRight();
-    } else if (node.value.startsWith("#")) {
-        const isPreviousLineEmpty = util.isPreviousLineEmpty(options.originalText, node, options);
-        const isNextLineEmpty = util.isNextLineEmptyAfterIndex(options.originalText, options.locEnd(node) + 1);
-        const docs = [];
-        if (isPreviousLineEmpty) {
-            docs.push(dedentToRoot(hardline));
-        }
-        docs.push(trim, node.value);
-        if (isNextLineEmpty && isLastComment(path)) {
-            docs.push(hardline);
-        }
-        return concat(docs);
-    } else {
-        return node.value;
-    }
-}
-
 function canAttachComment(node) {
     return node && node.leading === undefined && node.trailing === undefined && node.dangling === undefined;
 }
@@ -3225,29 +3175,6 @@ function handleOwnLineComments(comment /*, text, options, ast, isLastComment*/) 
     }
 
     return false;
-}
-
-function printDanglingComments(path, options) {
-    const parts = [];
-    const node = path.getValue();
-
-    if (!node || !node.comments) {
-        return "";
-    }
-
-    path.each(commentPath => {
-        const comment = commentPath.getValue();
-
-        if (comment && !comment.leading && !comment.trailing) {
-            parts.push(printComment(commentPath, options));
-        }
-    }, "comments");
-
-    if (parts.length === 0) {
-        return "";
-    }
-
-    return indent(concat([hardline, join(hardline, parts)]));
 }
 
 module.exports = {
