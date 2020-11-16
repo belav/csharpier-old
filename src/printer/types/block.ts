@@ -1,8 +1,6 @@
+import { concat, hardline, indent } from "../builders";
 import { printDanglingComments } from "../comments";
 import { getAny, PrintType } from "../helpers";
-import { doc } from "prettier";
-
-const { indent, concat, hardline } = doc.builders;
 
 export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
@@ -28,4 +26,4 @@ export const print: PrintType = (path, options, print) => {
     }
 
     return concat(docs);
-}
+};

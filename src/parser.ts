@@ -6,7 +6,6 @@ import * as CSharpLexer from "./csharp/CSharpLexer";
 import * as CSharpParser from "./csharp/CSharpParser";
 import { snakeCase } from "lodash";
 
-
 class ThrowingErrorListener extends ErrorListener {
     syntaxError(recognizer, offendingSymbol, line, column, msg, e) {
         const error = new SyntaxError(msg + " (" + line + ":" + column + ")");
@@ -107,7 +106,7 @@ function simplifyTree(node) {
 }
 
 function loc(prop) {
-    return function(node) {
+    return function (node) {
         return node[prop];
     };
 }

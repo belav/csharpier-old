@@ -1,11 +1,12 @@
-import { Doc, doc } from "prettier";
+import { doc, Doc } from "prettier";
+import { concat, group, hardline, indent, line, softline } from "../builders";
 import { PrintType } from "../helpers";
 import Concat = doc.builders.Concat;
 
-const { indent, concat, hardline, softline, line, group } = doc.builders;
-
 export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
+
+    console.log(node);
     const expression = path.call(print, "expression", 0);
     const ifBodies = path.map(print, "embedded_statement");
     const hasElse = ifBodies.length > 1;
@@ -44,4 +45,4 @@ export const print: PrintType = (path, options, print) => {
     }
 
     return group(concat(docs));
-}
+};

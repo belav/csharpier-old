@@ -7,27 +7,37 @@
   "license": "MIT",
   "main": "dist",
   "dependencies": {
-    "antlr4": "4.7.2",
-    "is-alphanumerical": "1.0.2",
-    "lodash": "4.17.20",
-    "prettier": "2.1.2"
+    "antlr4": "^4.7.2",
+    "is-alphanumerical": "^1.0.2",
+    "lodash": "^4.17.20",
+    "prettier": "^2.1.2"
   },
   "scripts": {
-    "build": "tsc",
-    "prettier": "prettier --write \"{src,test}/**/*.js\"",
+    "watch": "webpack --env=watch",
+    "build": "npm run clean-dist && webpack",
+    "clean-dist": "rimraf dist/*",
+    "prettier": "prettier --write \"{src,test}/**/*.{js,ts}\"",
     "test": "jest",
     "test:old:debug": "node --lazy --inspect-brk test",
-    "samples": "npm run build && node samples",
+    "samples": "node samples",
     "fetch-antlr": "node fetch",
     "generate-parser": "java -jar bin/antlr-4.7.2-complete.jar -Dlanguage=JavaScript src/csharp/*.g4",
     "csharpier": "prettier --plugin=. --parser=cs",
     "csharpier:debug": "node --lazy --inspect-brk src/debug.js"
   },
   "devDependencies": {
+    "@babel/core": "7.12.3",
     "@types/antlr4": "4.7.2",
     "@types/lodash": "4.14.165",
     "@types/prettier": "2.1.5",
+    "awesome-typescript-loader": "5.2.1",
+    "babel-loader": "8.2.1",
+    "copy-webpack-plugin": "6.3.1",
     "jest": "26.6.3",
-    "typescript": "4.0.5"
+    "source-map-loader": "1.1.2",
+    "rimraf": "3.0.2",
+    "typescript": "4.0.5",
+    "webpack": "5.4.0",
+    "webpack-cli": "4.2.0"
   }
 }

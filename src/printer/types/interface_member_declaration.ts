@@ -1,11 +1,11 @@
+import { concat, group, hardline, indent, line, softline } from "../builders";
 import { getAny, isSymbol, PrintType } from "../helpers";
-import { doc } from "prettier";
-
-const { indent, softline, group, concat, line, hardline } = doc.builders;
 
 export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
     const docs = [];
+
+    console.log(node);
 
     // TODO figure out what NodeType really is!
     // @ts-ignore
@@ -16,7 +16,7 @@ export const print: PrintType = (path, options, print) => {
     const isUnsafe = node.children.find(node => isSymbol(node, "unsafe"));
     const identifierDocs = path.call(print, "identifier", 0);
     const attributes = getAny(node, "attributes");
-    const type = getAny(node, "type");
+    const type = getAny(node, "type") ?? "";
     const interfaceAccessors = getAny(node, "interface_accessors");
     const formalParameterList = getAny(node, "formal_parameter_list");
 
@@ -83,4 +83,4 @@ export const print: PrintType = (path, options, print) => {
     docs.push(group(concat(declarationPart)));
 
     return group(concat(docs));
-}
+};

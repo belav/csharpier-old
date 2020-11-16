@@ -1041,13 +1041,13 @@ namespace Comments.XmlComments.UndocumentedKeywords
 
         void IsPatternMatch()
         {
-            if (3 is int foo) {}
-            if (3 is var bar) {}
-            if (3 is 3) {}
-            if (new object() is null) {}
-            if (0 is default(int) - 3) {}
-            if (true is false ^ false) {}
-            if (8 is sizeof(long)) {}
+            if (3 is int foo) test  {}
+            if (3 is var bar) test  {}
+            if (3 is 3) test  {}
+            if (new object() is null) test  {}
+            if (0 is default(int) - 3) test  {}
+            if (true is false ^ false) test  {}
+            if (8 is sizeof(long)) test  {}
         }
 
         void UnmanagedConstraint<T>()

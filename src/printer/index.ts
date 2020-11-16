@@ -211,7 +211,7 @@ function printType(path, options, print) {
 
 function printBaseType(path, options, print) {
     const node = path.getValue();
-    const nonVoidType = getAny(node, ["simple_type", "class_type", "tuple_type"]);
+    const nonVoidType = getAny(node, "simple_type", "class_type", "tuple_type");
 
     if (nonVoidType) {
         return path.call(print, nonVoidType, 0);
@@ -498,7 +498,7 @@ function printNamespaceMemberDeclarations(path, options, print) {
 
 function printNamespaceMemberDeclaration(path, options, print) {
     const node = path.getValue();
-    const namespace = getAny(node, ["namespace_declaration", "type_declaration"]);
+    const namespace = getAny(node, "namespace_declaration", "type_declaration");
 
     return group(path.call(print, namespace, 0));
 }
@@ -512,9 +512,9 @@ function printNamespaceDeclaration(path, options, print) {
 
 function printBraceBody(path, options, print) {
     const node = path.getValue();
-    const groupedDeclarations = getAny(node, ["class_member_declarations", "namespace_member_declarations"]);
+    const groupedDeclarations = getAny(node, "class_member_declarations", "namespace_member_declarations");
 
-    const lineSeparatedDeclarations = getAll(node, ["interface_member_declaration", "struct_member_declaration"]);
+    const lineSeparatedDeclarations = getAll(node, "interface_member_declaration", "struct_member_declaration");
 
     const commaSeparatedDeclarations = getAll(node, "enum_member_declaration");
     const externAliasDirectives = getAny(node, "extern_alias_directives");
@@ -568,13 +568,13 @@ function printTypeDeclaration(path, options, print) {
     const node = path.getValue();
     const attributes = getAny(node, "attributes");
     const allMemberModifiers = getAny(node, "all_member_modifiers");
-    const definition = getAny(node, [
+    const definition = getAny(node,
         "class_definition",
         "struct_definition",
         "interface_definition",
         "enum_definition",
         "delegate_definition",
-    ]);
+    );
 
     const docs = [];
 
@@ -594,8 +594,8 @@ function printTypeDeclaration(path, options, print) {
 function printStructDefinition(path, options, print) {
     const node = path.getValue();
     const identifier = path.call(print, "identifier", 0);
-    const base = getAny(node, ["class_base", "struct_interfaces", "enum_base"]);
-    const body = getAny(node, ["class_body", "struct_body", "enum_body"]);
+    const base = getAny(node, "class_base", "struct_interfaces", "enum_base");
+    const body = getAny(node, "class_body", "struct_body", "enum_body");
     const clauses = getAny(node, "type_parameter_constraints_clauses");
     const head = [path.call(print, "children", 0), line, identifier];
 
@@ -612,7 +612,7 @@ function printStructDefinition(path, options, print) {
 
 function printStructBase(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, ["interface_type_list", "type", "class_type"]);
+    const type = getAny(node, "interface_type_list", "type", "class_type");
     const namespaceOrTypeNames = getAny(node, "namespace_or_type_name");
 
     const docs = [path.call(print, type, 0)];
@@ -630,93 +630,6 @@ function printInterfaceTypeList(path, options, print) {
 
 function printClassOrStructMemberDeclarations(path, options, print) {
     return join(doublehardline, path.map(print, "children"));
-}
-
-function printClassOrStructMemberDeclaration(path, options, print) {
-    const node = path.getValue();
-    const attributes = getAny(node, "attributes");
-    const allMemberModifiers = getAny(node, "all_member_modifiers");
-    const commonMemberDeclaration = getAny(node, "common_member_declaration");
-    const destructorDefinition = getAny(node, "destructor_definition");
-    const type = getAny(node, "type");
-
-    const attributesPart = [];
-    const signaturePart = [];
-    const bodyPart = [];
-
-    if (attributes) {
-        attributesPart.push(group(concat([path.call(print, "attributes", 0), hardline])));
-    }
-
-    if (allMemberModifiers) {
-        signaturePart.push(path.call(print, allMemberModifiers, 0), " ");
-    }
-
-    if (commonMemberDeclaration) {
-        const declaration = getAny(node[commonMemberDeclaration][0], [
-            "method_declaration",
-            "typed_member_declaration",
-        ]);
-
-        if (declaration === "method_declaration") {
-            // It's always void (otherwise it's a typed_member_declaration).
-            signaturePart.push(
-                "void",
-                " ",
-                path.call(
-                    () => printMethodDeclarationSignatureBase(path, options, print),
-                    commonMemberDeclaration,
-                    0,
-                    declaration,
-                    0,
-                ),
-                path.call(
-                    () => printMethodDeclarationSignatureConstraints(path, options, print),
-                    commonMemberDeclaration,
-                    0,
-                    declaration,
-                    0,
-                ),
-            );
-            bodyPart.push(
-                path.call(
-                    () => printMethodDeclarationBody(path, options, print),
-                    commonMemberDeclaration,
-                    0,
-                    declaration,
-                    0,
-                ),
-            );
-        } else if (declaration === "typed_member_declaration") {
-            signaturePart.push(
-                path.call(
-                    () => printTypedMemberDeclarationSignature(path, options, print),
-                    commonMemberDeclaration,
-                    0,
-                    declaration,
-                    0,
-                ),
-            );
-            bodyPart.push(
-                path.call(
-                    () => printTypedMemberDeclarationBody(path, options, print),
-                    commonMemberDeclaration,
-                    0,
-                    declaration,
-                    0,
-                ),
-            );
-        } else {
-            signaturePart.push(path.call(print, commonMemberDeclaration, 0));
-        }
-    } else if (destructorDefinition) {
-        signaturePart.push(path.call(print, destructorDefinition, 0));
-    } else if (type) {
-        signaturePart.push("fixed", line, path.call(print, type, 0));
-        bodyPart.push(line, join(line, path.map(print, "fixed_size_buffer_declarator")), ";");
-    }
-
-    return group(concat([group(concat(attributesPart)), group(concat(signaturePart)), group(concat(bodyPart))]));
 }
 
 function printEnumMemberDeclaration(path, options, print) {
@@ -744,7 +657,7 @@ function printEnumMemberDeclaration(path, options, print) {
 function printCommonMemberDeclaration(path, options, print) {
     const node = path.getValue();
     const conversionOperator = getAny(node, "conversion_operator_declarator");
-    const declaration = getAny(node, ["method_declaration", "typed_member_declaration"]);
+    const declaration = getAny(node, "method_declaration", "typed_member_declaration");
 
     if (conversionOperator) {
         const body = getAny(node, "body");
@@ -790,9 +703,9 @@ function printCommonMemberDeclaration(path, options, print) {
     }
 }
 
-function printMethodDeclarationSignatureBase(path, options, print) {
+export function printMethodDeclarationSignatureBase(path, options, print) {
     const node = path.getValue();
-    const methodMemberName = getAny(node, ["method_member_name", "identifier"]);
+    const methodMemberName = getAny(node, "method_member_name", "identifier");
     const typeParameterList = getAny(node, "type_parameter_list");
     const formalParameterList = getAny(node, "formal_parameter_list");
 
@@ -813,7 +726,7 @@ function printMethodDeclarationSignatureBase(path, options, print) {
     return group(concat(signatureBasePart));
 }
 
-function printMethodDeclarationSignatureConstraints(path, options, print) {
+export function printMethodDeclarationSignatureConstraints(path, options, print) {
     const node = path.getValue();
     const constructorInitializer = getAny(node, "constructor_initializer");
     const typeParameterConstraintsClauses = getAny(node, "type_parameter_constraints_clauses");
@@ -832,9 +745,9 @@ function printMethodDeclarationSignatureConstraints(path, options, print) {
     return group(concat(docs));
 }
 
-function printMethodDeclarationBody(path, options, print) {
+export function printMethodDeclarationBody(path, options, print) {
     const node = path.getValue();
-    const methodBody = getAny(node, ["method_body", "body"]);
+    const methodBody = getAny(node, "method_body", "body");
     const expression = getAny(node, "expression");
 
     const docs = [];
@@ -869,17 +782,17 @@ function printPropertyDeclarationBody(path, options, print) {
     return group(concat(docs));
 }
 
-function printTypedMemberDeclarationSignature(path, options, print) {
+export function printTypedMemberDeclarationSignature(path, options, print) {
     const node = path.getValue();
     const typeDocs = path.call(print, "type", 0);
-    const declaration = getAny(node, [
+    const declaration = getAny(node,
         "namespace_or_type_name",
         "method_declaration",
         "property_declaration",
         "indexer_declaration",
         "operator_declaration",
         "field_declaration",
-    ]);
+    );
 
     const docs = [];
 
@@ -915,16 +828,16 @@ function printTypedMemberDeclarationSignature(path, options, print) {
     return group(concat(docs));
 }
 
-function printTypedMemberDeclarationBody(path, options, print) {
+export function printTypedMemberDeclarationBody(path, options, print) {
     const node = path.getValue();
-    const declaration = getAny(node, [
+    const declaration = getAny(node,
         "namespace_or_type_name",
         "method_declaration",
         "property_declaration",
         "indexer_declaration",
         "operator_declaration",
         "field_declaration",
-    ]);
+    );
 
     const docs = [];
 
@@ -1073,20 +986,9 @@ function printSimpleName(path, options, print) {
     return group(concat(docs));
 }
 
-function printBody(path, options, print) {
-    const node = path.getValue();
-    const block = getAny(node, "block");
-
-    if (block) {
-        return concat([line, path.call(print, block, 0)]);
-    }
-
-    return ";";
-}
-
 function printFormalParameterList(path, options, print) {
     const node = path.getValue();
-    const parameters = getAll(node, ["fixed_parameters", "parameter_array"]);
+    const parameters = getAll(node, "fixed_parameters", "parameter_array");
 
     return group(
         concat([
@@ -1250,7 +1152,7 @@ function printInterfaceDefinition(path, options, print) {
 
 function printTypeParameterList(path, options, print) {
     const node = path.getValue();
-    const typeParameters = getAny(node, ["type_parameter", "variant_type_parameter"]);
+    const typeParameters = getAny(node, "type_parameter", "variant_type_parameter");
 
     return group(concat(["<", indent(group(printCommaList(path.map(print, typeParameters)))), ">"]));
 }
@@ -1312,8 +1214,8 @@ function printDelegateDefinition(path, options, print) {
                                 ),
                                 typeParameterConstraintsClauses
                                     ? indent(
-                                    group(concat([line, path.call(print, typeParameterConstraintsClauses, 0)])),
-                                    )
+                                          group(concat([line, path.call(print, typeParameterConstraintsClauses, 0)])),
+                                      )
                                     : softline,
                             ]),
                         ),
@@ -1349,7 +1251,7 @@ function printTypeParameterConstraintsClause(path, options, print) {
 
 function printTypeParameterConstraints(path, options, print) {
     const node = path.getValue();
-    const constraints = getAll(node, ["primary_constraint", "secondary_constraints", "constructor_constraint"]);
+    const constraints = getAll(node, "primary_constraint", "secondary_constraints", "constructor_constraint");
 
     return printCommaList(constraints.map(constraint => path.call(print, constraint, 0)));
 }
@@ -1428,7 +1330,7 @@ function printAccessorDeclarations(path, options, print) {
     const node = path.getValue();
     const attributes = getAny(node, "attributes");
     const accessorModifier = getAny(node, "accessor_modifier");
-    const accessorBody = getAny(node, ["accessor_body", "block"]);
+    const accessorBody = getAny(node, "accessor_body", "block");
     const accessorOperator = path.call(print, "terminal", 0);
 
     const docs = [];
@@ -1600,12 +1502,12 @@ function printLabeledStatement(path, options, print) {
         return path.call(print, "children", 0);
     }
 
-    const statement = getAny(node, [
+    const statement = getAny(node,
         "empty_statement",
         "labeled_statement",
         "declaration_statement",
         "embedded_statement",
-    ]);
+    );
     return group(
         concat([path.call(print, identifier, 0), ":", group(concat([hardline, path.call(print, statement, 0)]))]),
     );
@@ -1640,8 +1542,8 @@ function printVariableDeclarationStatement(path, options, print) {
         return;
     }
 
-    const declaration = getAny(node, ["local_variable_declaration", "local_constant_declaration"]);
-    const statement = getAny(node, ["labeled_statement", "embedded_statement"]);
+    const declaration = getAny(node, "local_variable_declaration", "local_constant_declaration");
+    const statement = getAny(node, "labeled_statement", "embedded_statement");
 
     if (statement) {
         return path.call(print, statement, 0);
@@ -1653,9 +1555,9 @@ function printVariableDeclarationStatement(path, options, print) {
 function printVariableDeclarator(path, options, print) {
     const node = path.getValue();
 
-    const initializer = getAny(node, ["local_variable_initializer", "variable_initializer"]);
+    const initializer = getAny(node, "local_variable_initializer", "variable_initializer");
 
-    const identifier = getAny(node, ["local_variable_identifier", "identifier"]);
+    const identifier = getAny(node, "local_variable_identifier", "identifier");
 
     const docs = [path.call(print, identifier, 0)];
 
@@ -1691,7 +1593,7 @@ function printLocalVariableIdentifier(path, options, print) {
 function printVariableDeclaration(path, options, print) {
     const node = path.getValue();
     const variableType = getAny(node, "local_variable_type");
-    const variableDeclarators = getAll(node, ["local_variable_declarator", "variable_declarator"]);
+    const variableDeclarators = getAll(node, "local_variable_declarator", "variable_declarator");
 
     const docs = [];
 
@@ -1730,7 +1632,7 @@ function printLocalVariableType(path, options, print) {
 
 function printVariableInitializer(path, options, print) {
     const node = path.getValue();
-    const initializer = getAny(node, ["expression", "array_initializer", "local_variable_initializer_unsafe"]);
+    const initializer = getAny(node, "expression", "array_initializer", "local_variable_initializer_unsafe");
 
     return path.call(print, initializer, 0);
 }
@@ -2132,7 +2034,7 @@ function printAnonymousMethodExpression(path, options, print) {
 
 function printTypeofExpression(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, ["unbound_type_name", "type"]);
+    const type = getAny(node, "unbound_type_name", "type");
 
     return group(
         concat([
@@ -2221,7 +2123,7 @@ function printCapturingStatement(path, options, print) {
     ];
 
     const onlyContainsACapturingStatement =
-        !hasBraces && !!getAny(embeddedStatement, ["using_statement", "fixed_statement", "lock_statement"]);
+        !hasBraces && !!getAny(embeddedStatement, "using_statement", "fixed_statement", "lock_statement");
 
     const statementDocs = path.call(print, "embedded_statement", 0);
 
@@ -2259,7 +2161,7 @@ function printResourceAcquisition(path, options, print) {
 function printTryStatement(path, options, print) {
     const node = path.getValue();
     const block = path.call(print, "block", 0);
-    const clauses = getAll(node, ["catch_clauses", "finally_clause"]);
+    const clauses = getAll(node, "catch_clauses", "finally_clause");
 
     return group(
         concat([
@@ -2277,7 +2179,7 @@ function printTryStatement(path, options, print) {
 
 function printCatchClauses(path, options, print) {
     const node = path.getValue();
-    const clauses = getAll(node, ["specific_catch_clause", "general_catch_clause"]);
+    const clauses = getAll(node, "specific_catch_clause", "general_catch_clause");
 
     return join(hardline, _.flatten(clauses.map(clause => path.map(print, clause))));
 }
@@ -2326,7 +2228,7 @@ function printObjectOrCollectionInitializer(path, options, print) {
 
 function printObjectInitializer(path, options, print) {
     const node = path.getValue();
-    const memberInitializerList = getAny(node, ["member_initializer_list", "member_declarator_list"]);
+    const memberInitializerList = getAny(node, "member_initializer_list", "member_declarator_list");
 
     const docs = ["{"];
 
@@ -2619,10 +2521,10 @@ function printLambdaExpression(path, options, print) {
 function printAnonymousFunctionSignature(path, options, print) {
     const node = path.getValue();
     const identifier = getAny(node, "identifier");
-    const parameters = getAny(node, [
+    const parameters = getAny(node,
         "explicit_anonymous_function_parameter_list",
         "implicit_anonymous_function_parameter_list",
-    ]);
+    );
 
     if (identifier) {
         return path.call(print, identifier, 0);
@@ -2647,7 +2549,7 @@ function printAnonymousFunctionBody(path, options, print) {
 
 function printAnonymousFunctionParameterList(path, options, print) {
     const node = path.getValue();
-    const parameters = getAny(node, ["explicit_anonymous_function_parameter", "identifier"]);
+    const parameters = getAny(node, "explicit_anonymous_function_parameter", "identifier");
 
     return printCommaList(path.map(print, parameters));
 }
@@ -2668,6 +2570,10 @@ function printExplicitAnonymousFunctionParameter(path, options, print) {
 
 function printNode(path, options, print) {
     const node = path.getValue();
+
+    if (types[node.nodeType]) {
+        return types[node.nodeType](path, options, print);
+    }
 
     // TODO split these all apart, and squash this down? would need to detect if a file doesn't exist and then error
     switch (node.nodeType) {
@@ -2771,8 +2677,7 @@ function printNode(path, options, print) {
             return printParameterArray(path, options, print);
         case "accessor_body":
         case "method_body":
-        case "body":
-            return printBody(path, options, print);
+            return types["body"](path, options, print);
         case "expression":
             return printExpression(path, options, print);
         case "non_assignment_expression":
@@ -2860,9 +2765,8 @@ function printNode(path, options, print) {
             return printClassOrStructMemberDeclarations(path, options, print);
         case "enum_member_declaration":
             return printEnumMemberDeclaration(path, options, print);
-        case "class_member_declaration":
         case "struct_member_declaration":
-            return printClassOrStructMemberDeclaration(path, options, print);
+            return types["class_member_declaration"](path, options, print);
         case "local_function_declaration":
             return printCommonMemberDeclaration(path, options, print);
         case "common_member_declaration":
@@ -2880,12 +2784,8 @@ function printNode(path, options, print) {
             return printConstantDeclarators(path, options, print);
         case "constant_declarator":
             return printConstantDeclarator(path, options, print);
-        case "block":
-            return types[node.nodeType](path, options, print);
         case "interface_definition":
             return printInterfaceDefinition(path, options, print);
-        case "interface_member_declaration":
-            return types[node.nodeType](path, options, print);
         case "type_parameter_list":
         case "variant_type_parameter_list":
             return printTypeParameterList(path, options, print);
@@ -2970,8 +2870,6 @@ function printNode(path, options, print) {
             return printInterpolatedStringPart(path, options, print);
         case "interpolated_string_expression":
             return printInterpolatedStringExpression(path, options, print);
-        case "if_statement":
-            return types[node.nodeType](path, options, print);
         case "return_statement":
         case "throw_statement":
         case "break_statement":
