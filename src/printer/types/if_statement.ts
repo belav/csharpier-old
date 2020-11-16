@@ -1,16 +1,18 @@
 import { Doc, doc } from "prettier";
+import { PrintType } from "../helpers";
+import Concat = doc.builders.Concat;
 
 const { indent, concat, hardline, softline, line, group } = doc.builders;
 
-export function print(path: any, options: any, print: any) {
+export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
     const expression = path.call(print, "expression", 0);
     const ifBodies = path.map(print, "embedded_statement");
     const hasElse = ifBodies.length > 1;
     const ifHasBraces = !!node["embedded_statement"][0]["block"];
-    const emptyIfBraces = ifHasBraces && ifBodies[0].parts.length === 2;
+    const emptyIfBraces = ifHasBraces && (ifBodies[0] as Concat).parts.length === 2;
     const elseHasBraces = hasElse && !!node["embedded_statement"][1]["block"];
-    const emptyElseBraces = elseHasBraces && ifBodies[1].parts.length === 2;
+    const emptyElseBraces = elseHasBraces && (ifBodies[1] as Concat).parts.length === 2;
     const hasElseIf = hasElse && !!node["embedded_statement"][1]["if_statement"];
 
     const docs: Doc[] = ["if", " ", "(", group(concat([indent(group(concat([softline, expression]))), softline])), ")"];

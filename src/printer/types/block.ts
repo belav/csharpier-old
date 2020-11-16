@@ -1,10 +1,10 @@
 import { printDanglingComments } from "../comments";
-import { getAny } from "../helpers";
+import { getAny, PrintType } from "../helpers";
 import { doc } from "prettier";
 
 const { indent, concat, hardline } = doc.builders;
 
-export function print(path: any, options: any, print: any) {
+export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
     const docs = [];
 

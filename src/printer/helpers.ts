@@ -1,4 +1,11 @@
 // TODO anys + ts-ignore
+import { Doc, FastPath, ParserOptions } from "prettier";
+
+interface NodeType {
+
+}
+
+export type PrintType = (path: FastPath<NodeType>, options: ParserOptions<NodeType>, print: (path: FastPath<NodeType>) => Doc) => Doc;
 
 export function isSymbol(node: any, symbol: any) {
     return isType(node, "terminal") && node.value === symbol;

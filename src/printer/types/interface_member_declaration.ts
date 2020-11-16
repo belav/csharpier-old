@@ -1,12 +1,13 @@
-import { getAny, isSymbol } from "../helpers";
+import { getAny, isSymbol, PrintType } from "../helpers";
 import { doc } from "prettier";
 
 const { indent, softline, group, concat, line, hardline } = doc.builders;
 
-export function print(path: any, options: any, print: any) {
+export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
     const docs = [];
 
+    // TODO figure out what NodeType really is!
     // @ts-ignore
     const isNew = node.children.find(node => isSymbol(node, "new"));
     // @ts-ignore
