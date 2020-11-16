@@ -2,8 +2,10 @@ const prettier = require("prettier");
 const fs = require("fs");
 const path = require("path");
 
+const [, , sampleName] = process.argv;
+
 fs.readdirSync(__dirname).forEach(file => {
-   if (!file.endsWith(".cs") || file.endsWith(".Formatted.cs")) {
+   if (!file.endsWith(".cs") || file.endsWith(".Formatted.cs") || (sampleName && !file.startsWith(sampleName + "."))) {
        return
    }
 

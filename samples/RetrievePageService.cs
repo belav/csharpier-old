@@ -66,7 +66,6 @@ namespace Insite.Spire.Services
         {
             var pageVersionQuery = this.PageVersionQuery(unitOfWork, siteContext);
             var pageVersions = pageVersionQuery.Where(o => o.Page.Node.Type == type)
-                // TODO ISC-14335 this first ToArray seems unnecessary, may need to change this to FirstOrDefault and ditch the ToArray
                 .ToArray().GroupBy(o => o.PageId).Select(o => o.First()).ToArray();
 
             return this.CreateResult(this.GetPageVariantVersion(pageVersions, siteContext), unitOfWork, siteContext, null);
@@ -74,7 +73,6 @@ namespace Insite.Spire.Services
 
         public IList<PageModel> GetPagesByParent(IUnitOfWork unitOfWork, ISiteContext siteContext, Guid parentNodeId)
         {
-            // TODO ISC-14335 add variant support
             var pageVersionQuery = this.PageVersionQuery(unitOfWork, siteContext);
             var pageVersions = pageVersionQuery.Where(o => o.Page.Node.ParentId == parentNodeId)
                 .GroupBy(o => o.PageId).Select(o => o.FirstOrDefault()).ToList();
@@ -188,7 +186,6 @@ namespace Insite.Spire.Services
             return this.NotFoundPage(unitOfWork, siteContext);
         }
 
-        // TODO ISC-14335 maybe this should be passed a dictionary by pageId or something?
         private string GetPageVariantVersion(ICollection<PageVersion> pageVersions, ISiteContext siteContext)
         {
             var ruleObjects = new List<object>

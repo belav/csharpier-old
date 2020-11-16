@@ -1,12 +1,11 @@
-// TODO find all ts-nochecks
-// TODO figure out how to deal with dist/csharp, it should be copied there? maybe auto gen then copy there? also would the src files get checked in?
+// TODO find all ts-nochecks, ts-ignores, etc
 // TODO rename this to prettier-plugin-csharpier if I really release it, then prettier works with it automatically
 
 // @ts-nocheck
 import { printComment, printDanglingComments } from "./comments";
 import * as alphanumerical from "is-alphanumerical";
 import { doc, util } from "prettier";
-import { getAny, isSymbol, isType, getAll } from "./helpers";
+import { findAnyProperty, isSymbol, isType, findAllProperties } from "./helpers";
 import * as _ from "lodash";
 import * as types from "./types";
 
@@ -18,10 +17,10 @@ function printCompilationUnit(path, options, print) {
     const node = path.getValue();
     const parts = [];
 
-    const externAliasDirectives = getAny(node, "extern_alias_directives");
-    const usingDirectives = getAny(node, "using_directives");
-    const globalAttributeSections = getAny(node, "global_attribute_section");
-    const namespaceMemberDeclarations = getAny(node, "namespace_member_declarations");
+    const externAliasDirectives = findAnyProperty(node, "extern_alias_directives");
+    const usingDirectives = findAnyProperty(node, "using_directives");
+    const globalAttributeSections = findAnyProperty(node, "global_attribute_section");
+    const namespaceMemberDeclarations = findAnyProperty(node, "namespace_member_declarations");
 
     if (externAliasDirectives) {
         parts.push(path.call(print, externAliasDirectives, 0));
@@ -48,11 +47,6 @@ function printExternAliasDirectives(path, options, print) {
 
 function printExternAliasDirective(path, options, print) {
     return group(concat(["extern", " ", "alias", indent(concat([line, path.call(print, "identifier", 0)])), ";"]));
-}
-
-function printTerminal(path) {
-    const node = path.getValue();
-    return node.value;
 }
 
 function printIdentifier(path, options, print) {
@@ -92,9 +86,9 @@ function reorderAndPrintUsingDirectives(path, options, print) {
         return systems.concat(others);
     };
 
-    const namespaces = getAny(node, "using_namespace_directive");
-    const aliases = getAny(node, "using_alias_directive");
-    const statics = getAny(node, "using_static_directive");
+    const namespaces = findAnyProperty(node, "using_namespace_directive");
+    const aliases = findAnyProperty(node, "using_alias_directive");
+    const statics = findAnyProperty(node, "using_static_directive");
 
     const docs = [namespaces, aliases, statics]
         .filter(usings => usings)
@@ -162,7 +156,7 @@ function printArgumentList(path, options, print) {
 
 function printArgument(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
+    const identifier = findAnyProperty(node, "identifier");
     const hasRef = node.children.find(child => isSymbol(child, "ref"));
     const hasOut = node.children.find(child => isSymbol(child, "out"));
 
@@ -187,7 +181,7 @@ function printArgument(path, options, print) {
 
 function printTypedArgument(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, "type");
+    const type = findAnyProperty(node, "type");
     const hasVar = node.children.find(child => isSymbol(child, "var"));
 
     const docs = [];
@@ -211,32 +205,13 @@ function printType(path, options, print) {
 
 function printBaseType(path, options, print) {
     const node = path.getValue();
-    const nonVoidType = getAny(node, "simple_type", "class_type", "tuple_type");
+    const nonVoidType = findAnyProperty(node, "simple_type", "class_type", "tuple_type");
 
     if (nonVoidType) {
         return path.call(print, nonVoidType, 0);
     }
 
     return concat(["void", "*"]);
-}
-
-function printSimpleType(path, options, print) {
-    const node = path.getValue();
-
-    for (const typeType of [
-        "predefined_type",
-        "simple_type",
-        "numeric_type",
-        "integral_type",
-        "floating_point_type",
-        "terminal",
-    ]) {
-        if (node[typeType]) {
-            return path.call(print, typeType, 0);
-        }
-    }
-
-    return "bool";
 }
 
 function printClassType(path, options, print) {
@@ -251,7 +226,7 @@ function printTupleType(path, options, print) {
 
 function printTupleElementType(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
+    const identifier = findAnyProperty(node, "identifier");
 
     const docs = [path.call(print, "type", 0)];
 
@@ -299,7 +274,7 @@ function printAttributeList(path, options, print) {
 
 function printAttribute(path, options, print) {
     const node = path.getValue();
-    const attributeArguments = getAll(node, "attribute_argument");
+    const attributeArguments = findAllProperties(node, "attribute_argument");
     const hasParenthesis = node.children.findIndex(child => isSymbol(child, "(")) >= 0;
 
     const docs = [path.call(print, "namespace_or_type_name", 0)];
@@ -321,7 +296,7 @@ function printAttribute(path, options, print) {
 
 function printAttributeArgument(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
+    const identifier = findAnyProperty(node, "identifier");
 
     const docs = [];
 
@@ -340,7 +315,7 @@ function printAttributes(path, options, print) {
 
 function printAttributeSection(path, options, print) {
     const node = path.getValue();
-    const attributeTarget = getAny(node, "attribute_target");
+    const attributeTarget = findAnyProperty(node, "attribute_target");
 
     const attributePart = [softline];
 
@@ -363,8 +338,8 @@ function printNonAssignmentExpression(path, options, print) {
 
 function printConditionalExpression(path, options, print) {
     const node = path.getValue();
-    const nullCoalescingExpression = getAny(node, "null_coalescing_expression");
-    const expression = getAny(node, "expression");
+    const nullCoalescingExpression = findAnyProperty(node, "null_coalescing_expression");
+    const expression = findAnyProperty(node, "expression");
 
     if (!expression) {
         return path.call(print, nullCoalescingExpression, 0);
@@ -382,8 +357,8 @@ function printConditionalExpression(path, options, print) {
 
 function printNullCoalescingExpression(path, options, print) {
     const node = path.getValue();
-    const conditionalOrExpression = getAny(node, "conditional_or_expression");
-    const nullCoalescingExpression = getAny(node, "null_coalescing_expression");
+    const conditionalOrExpression = findAnyProperty(node, "conditional_or_expression");
+    const nullCoalescingExpression = findAnyProperty(node, "null_coalescing_expression");
 
     if (!nullCoalescingExpression) {
         return path.call(print, conditionalOrExpression, 0);
@@ -447,13 +422,13 @@ function printPrimaryExpression(path, options, print) {
 
 function printUnaryExpression(path, options, print) {
     const node = path.getValue();
-    const primaryExpression = getAny(node, "primary_expression");
+    const primaryExpression = findAnyProperty(node, "primary_expression");
 
     if (primaryExpression) {
         return path.call(print, primaryExpression, 0);
     }
 
-    const type = getAny(node, "type");
+    const type = findAnyProperty(node, "type");
 
     if (type) {
         return group(concat(["(", path.call(print, type, 0), ")", line, path.call(print, "unary_expression", 0)]));
@@ -498,7 +473,7 @@ function printNamespaceMemberDeclarations(path, options, print) {
 
 function printNamespaceMemberDeclaration(path, options, print) {
     const node = path.getValue();
-    const namespace = getAny(node, "namespace_declaration", "type_declaration");
+    const namespace = findAnyProperty(node, "namespace_declaration", "type_declaration");
 
     return group(path.call(print, namespace, 0));
 }
@@ -512,13 +487,17 @@ function printNamespaceDeclaration(path, options, print) {
 
 function printBraceBody(path, options, print) {
     const node = path.getValue();
-    const groupedDeclarations = getAny(node, "class_member_declarations", "namespace_member_declarations");
+    const groupedDeclarations = findAnyProperty(node, "class_member_declarations", "namespace_member_declarations");
 
-    const lineSeparatedDeclarations = getAll(node, "interface_member_declaration", "struct_member_declaration");
+    const lineSeparatedDeclarations = findAllProperties(
+        node,
+        "interface_member_declaration",
+        "struct_member_declaration",
+    );
 
-    const commaSeparatedDeclarations = getAll(node, "enum_member_declaration");
-    const externAliasDirectives = getAny(node, "extern_alias_directives");
-    const usingDirectives = getAny(node, "using_directives");
+    const commaSeparatedDeclarations = findAllProperties(node, "enum_member_declaration");
+    const externAliasDirectives = findAnyProperty(node, "extern_alias_directives");
+    const usingDirectives = findAnyProperty(node, "using_directives");
 
     const hasDeclarations =
         lineSeparatedDeclarations.length ||
@@ -566,9 +545,10 @@ function printBraceBody(path, options, print) {
 
 function printTypeDeclaration(path, options, print) {
     const node = path.getValue();
-    const attributes = getAny(node, "attributes");
-    const allMemberModifiers = getAny(node, "all_member_modifiers");
-    const definition = getAny(node,
+    const attributes = findAnyProperty(node, "attributes");
+    const allMemberModifiers = findAnyProperty(node, "all_member_modifiers");
+    const definition = findAnyProperty(
+        node,
         "class_definition",
         "struct_definition",
         "interface_definition",
@@ -594,9 +574,9 @@ function printTypeDeclaration(path, options, print) {
 function printStructDefinition(path, options, print) {
     const node = path.getValue();
     const identifier = path.call(print, "identifier", 0);
-    const base = getAny(node, "class_base", "struct_interfaces", "enum_base");
-    const body = getAny(node, "class_body", "struct_body", "enum_body");
-    const clauses = getAny(node, "type_parameter_constraints_clauses");
+    const base = findAnyProperty(node, "class_base", "struct_interfaces", "enum_base");
+    const body = findAnyProperty(node, "class_body", "struct_body", "enum_body");
+    const clauses = findAnyProperty(node, "type_parameter_constraints_clauses");
     const head = [path.call(print, "children", 0), line, identifier];
 
     if (base) {
@@ -612,8 +592,8 @@ function printStructDefinition(path, options, print) {
 
 function printStructBase(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, "interface_type_list", "type", "class_type");
-    const namespaceOrTypeNames = getAny(node, "namespace_or_type_name");
+    const type = findAnyProperty(node, "interface_type_list", "type", "class_type");
+    const namespaceOrTypeNames = findAnyProperty(node, "namespace_or_type_name");
 
     const docs = [path.call(print, type, 0)];
 
@@ -634,8 +614,8 @@ function printClassOrStructMemberDeclarations(path, options, print) {
 
 function printEnumMemberDeclaration(path, options, print) {
     const node = path.getValue();
-    const attributes = getAny(node, "attributes");
-    const expression = getAny(node, "expression");
+    const attributes = findAnyProperty(node, "attributes");
+    const expression = findAnyProperty(node, "expression");
 
     const docs = [];
 
@@ -656,12 +636,12 @@ function printEnumMemberDeclaration(path, options, print) {
 
 function printCommonMemberDeclaration(path, options, print) {
     const node = path.getValue();
-    const conversionOperator = getAny(node, "conversion_operator_declarator");
-    const declaration = getAny(node, "method_declaration", "typed_member_declaration");
+    const conversionOperator = findAnyProperty(node, "conversion_operator_declarator");
+    const declaration = findAnyProperty(node, "method_declaration", "typed_member_declaration");
 
     if (conversionOperator) {
-        const body = getAny(node, "body");
-        const expression = getAny(node, "expression");
+        const body = findAnyProperty(node, "body");
+        const expression = findAnyProperty(node, "expression");
 
         const docs = [path.call(print, conversionOperator, 0)];
 
@@ -705,9 +685,9 @@ function printCommonMemberDeclaration(path, options, print) {
 
 export function printMethodDeclarationSignatureBase(path, options, print) {
     const node = path.getValue();
-    const methodMemberName = getAny(node, "method_member_name", "identifier");
-    const typeParameterList = getAny(node, "type_parameter_list");
-    const formalParameterList = getAny(node, "formal_parameter_list");
+    const methodMemberName = findAnyProperty(node, "method_member_name", "identifier");
+    const typeParameterList = findAnyProperty(node, "type_parameter_list");
+    const formalParameterList = findAnyProperty(node, "formal_parameter_list");
 
     const signatureBasePart = [path.call(print, methodMemberName, 0)];
 
@@ -728,8 +708,8 @@ export function printMethodDeclarationSignatureBase(path, options, print) {
 
 export function printMethodDeclarationSignatureConstraints(path, options, print) {
     const node = path.getValue();
-    const constructorInitializer = getAny(node, "constructor_initializer");
-    const typeParameterConstraintsClauses = getAny(node, "type_parameter_constraints_clauses");
+    const constructorInitializer = findAnyProperty(node, "constructor_initializer");
+    const typeParameterConstraintsClauses = findAnyProperty(node, "type_parameter_constraints_clauses");
 
     const docs = [];
 
@@ -747,8 +727,8 @@ export function printMethodDeclarationSignatureConstraints(path, options, print)
 
 export function printMethodDeclarationBody(path, options, print) {
     const node = path.getValue();
-    const methodBody = getAny(node, "method_body", "body");
-    const expression = getAny(node, "expression");
+    const methodBody = findAnyProperty(node, "method_body", "body");
+    const expression = findAnyProperty(node, "expression");
 
     const docs = [];
 
@@ -765,10 +745,10 @@ function printPropertyDeclarationBody(path, options, print) {
     const node = path.getValue();
     const docs = [];
 
-    const accessorDeclarations = getAny(node, "accessor_declarations");
+    const accessorDeclarations = findAnyProperty(node, "accessor_declarations");
 
     if (accessorDeclarations) {
-        const variableInitializer = getAny(node, "variable_initializer");
+        const variableInitializer = findAnyProperty(node, "variable_initializer");
 
         docs.push(line, "{", indent(group(concat([line, path.call(print, accessorDeclarations, 0)]))), line, "}");
 
@@ -785,7 +765,8 @@ function printPropertyDeclarationBody(path, options, print) {
 export function printTypedMemberDeclarationSignature(path, options, print) {
     const node = path.getValue();
     const typeDocs = path.call(print, "type", 0);
-    const declaration = getAny(node,
+    const declaration = findAnyProperty(
+        node,
         "namespace_or_type_name",
         "method_declaration",
         "property_declaration",
@@ -830,7 +811,8 @@ export function printTypedMemberDeclarationSignature(path, options, print) {
 
 export function printTypedMemberDeclarationBody(path, options, print) {
     const node = path.getValue();
-    const declaration = getAny(node,
+    const declaration = findAnyProperty(
+        node,
         "namespace_or_type_name",
         "method_declaration",
         "property_declaration",
@@ -846,7 +828,7 @@ export function printTypedMemberDeclarationBody(path, options, print) {
     } else if (declaration === "method_declaration") {
         docs.push(path.call(() => printMethodDeclarationBody(path, options, print), declaration, 0));
     } else if (declaration === "namespace_or_type_name") {
-        const indexer = getAny(node, "indexer_declaration");
+        const indexer = findAnyProperty(node, "indexer_declaration");
 
         docs.push(
             path.call(print, declaration, 0),
@@ -874,7 +856,7 @@ function printMethodDeclaration(path, options, print) {
 
 function printMethodInvocation(path, options, print) {
     const node = path.getValue();
-    const argumentList = getAny(node, "argument_list");
+    const argumentList = findAnyProperty(node, "argument_list");
 
     return group(concat(["(", argumentList ? path.call(print, argumentList, 0) : softline, ")"]));
 }
@@ -886,7 +868,7 @@ function printQualifiedIdentifier(path, options, print) {
 function printQualifiedAliasMember(path, options, print) {
     const node = path.getValue();
     const identifiers = path.map(print, "identifier");
-    const typeArgumentList = getAny(node, "type_argument_list");
+    const typeArgumentList = findAnyProperty(node, "type_argument_list");
 
     const docs = [identifiers[0], "::", identifiers[1]];
 
@@ -917,7 +899,7 @@ function printConstructorInitializer(path, options, print) {
     const node = path.getValue();
 
     const baseDocs = path.call(print, "children", 1); // base or this
-    const argumentList = getAny(node, "argument_list");
+    const argumentList = findAnyProperty(node, "argument_list");
 
     const docs = [baseDocs, "("];
 
@@ -975,7 +957,7 @@ function printMemberName(path, options, print) {
 
 function printSimpleName(path, options, print) {
     const node = path.getValue();
-    const typeArgumentList = getAny(node, "type_argument_list");
+    const typeArgumentList = findAnyProperty(node, "type_argument_list");
 
     const docs = [path.call(print, "identifier", 0)];
 
@@ -988,7 +970,7 @@ function printSimpleName(path, options, print) {
 
 function printFormalParameterList(path, options, print) {
     const node = path.getValue();
-    const parameters = getAll(node, "fixed_parameters", "parameter_array");
+    const parameters = findAllProperties(node, "fixed_parameters", "parameter_array");
 
     return group(
         concat([
@@ -1004,14 +986,14 @@ function printFixedParameters(path, options, print) {
 
 function printFixedParameter(path, options, print) {
     const node = path.getValue();
-    const argDeclaration = getAny(node, "arg_declaration");
+    const argDeclaration = findAnyProperty(node, "arg_declaration");
 
     if (!argDeclaration) {
         return "__arglist";
     }
 
-    const attributes = getAny(node, "attributes");
-    const parameterModifier = getAny(node, "parameter_modifier");
+    const attributes = findAnyProperty(node, "attributes");
+    const parameterModifier = findAnyProperty(node, "parameter_modifier");
 
     const docs = [];
 
@@ -1040,7 +1022,7 @@ function printFixedPointerDeclarator(path, options, print) {
 
 function printFixedPointerInitializer(path, options, print) {
     const node = path.getValue();
-    const expression = getAny(node, "expression");
+    const expression = findAnyProperty(node, "expression");
 
     if (expression) {
         if (isSymbol(node.children[0], "&")) {
@@ -1081,7 +1063,7 @@ function printLocalVariableInitializerUnsafe(path, options, print) {
 
 function printParameterArray(path, options, print) {
     const node = path.getValue();
-    const attributes = getAny(node, "attributes");
+    const attributes = findAnyProperty(node, "attributes");
 
     const docs = [];
 
@@ -1098,7 +1080,7 @@ function printParameterArray(path, options, print) {
 
 function printArgDeclaration(path, options, print) {
     const node = path.getValue();
-    const expression = getAny(node, "expression");
+    const expression = findAnyProperty(node, "expression");
 
     const docs = [path.call(print, "type", 0), line, path.call(print, "identifier", 0)];
 
@@ -1129,9 +1111,9 @@ function printConstantDeclarator(path, options, print) {
 
 function printInterfaceDefinition(path, options, print) {
     const node = path.getValue();
-    const variantTypeParameterList = getAny(node, "variant_type_parameter_list");
-    const interfaceBase = getAny(node, "interface_base");
-    const typeParameterConstraintsClauses = getAny(node, "type_parameter_constraints_clauses");
+    const variantTypeParameterList = findAnyProperty(node, "variant_type_parameter_list");
+    const interfaceBase = findAnyProperty(node, "interface_base");
+    const typeParameterConstraintsClauses = findAnyProperty(node, "type_parameter_constraints_clauses");
 
     const interfaceHead = ["interface", line, path.call(print, "identifier", 0)];
 
@@ -1152,7 +1134,7 @@ function printInterfaceDefinition(path, options, print) {
 
 function printTypeParameterList(path, options, print) {
     const node = path.getValue();
-    const typeParameters = getAny(node, "type_parameter", "variant_type_parameter");
+    const typeParameters = findAnyProperty(node, "type_parameter", "variant_type_parameter");
 
     return group(concat(["<", indent(group(printCommaList(path.map(print, typeParameters)))), ">"]));
 }
@@ -1162,13 +1144,13 @@ function printTypeParameter(path, options, print) {
 
     const docs = [];
 
-    const attributes = getAny(node, "attributes");
+    const attributes = findAnyProperty(node, "attributes");
 
     if (attributes) {
         docs.push(path.call(print, attributes, 0), line);
     }
 
-    const varianceAnnotation = getAny(node, "variance_annotation");
+    const varianceAnnotation = findAnyProperty(node, "variance_annotation");
 
     if (varianceAnnotation) {
         docs.push(path.call(print, varianceAnnotation, 0), line);
@@ -1186,9 +1168,9 @@ function printVarianceAnnotation(path, options, print) {
 
 function printDelegateDefinition(path, options, print) {
     const node = path.getValue();
-    const variantTypeParameterList = getAny(node, "variant_type_parameter_list");
-    const typeParameterConstraintsClauses = getAny(node, "type_parameter_constraints_clauses");
-    const formalParameterList = getAny(node, "formal_parameter_list");
+    const variantTypeParameterList = findAnyProperty(node, "variant_type_parameter_list");
+    const typeParameterConstraintsClauses = findAnyProperty(node, "type_parameter_constraints_clauses");
+    const formalParameterList = findAnyProperty(node, "formal_parameter_list");
 
     return group(
         concat([
@@ -1251,7 +1233,12 @@ function printTypeParameterConstraintsClause(path, options, print) {
 
 function printTypeParameterConstraints(path, options, print) {
     const node = path.getValue();
-    const constraints = getAll(node, "primary_constraint", "secondary_constraints", "constructor_constraint");
+    const constraints = findAllProperties(
+        node,
+        "primary_constraint",
+        "secondary_constraints",
+        "constructor_constraint",
+    );
 
     return printCommaList(constraints.map(constraint => path.call(print, constraint, 0)));
 }
@@ -1283,7 +1270,7 @@ function printAssignment(path, options, print) {
     const operator = path.call(print, "assignment_operator", 0);
     const right = path.call(print, "expression", 0);
 
-    // TODO Refine logic so member expression chains or conditional expressions can break.
+    // TODO from old repo - Refine logic so member expression chains or conditional expressions can break.
     const canBreak = canAssignmentBreak(path.getValue());
 
     return group(
@@ -1308,7 +1295,7 @@ function printFieldDeclaration(path, options, print) {
 
 function printEventDeclaration(path, options, print) {
     const node = path.getValue();
-    const variableDeclarators = getAny(node, "variable_declarators");
+    const variableDeclarators = findAnyProperty(node, "variable_declarators");
 
     const docs = ["event", " ", path.call(print, "type", 0)];
 
@@ -1328,9 +1315,9 @@ function printEventDeclaration(path, options, print) {
 
 function printAccessorDeclarations(path, options, print) {
     const node = path.getValue();
-    const attributes = getAny(node, "attributes");
-    const accessorModifier = getAny(node, "accessor_modifier");
-    const accessorBody = getAny(node, "accessor_body", "block");
+    const attributes = findAnyProperty(node, "attributes");
+    const accessorModifier = findAnyProperty(node, "accessor_modifier");
+    const accessorBody = findAnyProperty(node, "accessor_body", "block");
     const accessorOperator = path.call(print, "terminal", 0);
 
     const docs = [];
@@ -1359,7 +1346,7 @@ function printAccessorDeclarations(path, options, print) {
     };
 
     if (counterAccessorDeclarations[accessorOperator]) {
-        const counterAccessorDeclaration = getAny(node, counterAccessorDeclarations[accessorOperator]);
+        const counterAccessorDeclaration = findAnyProperty(node, counterAccessorDeclarations[accessorOperator]);
 
         if (counterAccessorDeclaration) {
             docs.push(line, path.call(print, counterAccessorDeclaration, 0));
@@ -1371,7 +1358,7 @@ function printAccessorDeclarations(path, options, print) {
 
 function printInterfaceAccessors(path, options, print) {
     const node = path.getValue();
-    const attributes = getAny(node, "attributes") ? path.map(print, "attributes") : [];
+    const attributes = findAnyProperty(node, "attributes") ? path.map(print, "attributes") : [];
     const firstAccessorAttributes = attributes.length >= 1 && isType(node.children[0], "attributes");
     const secondAccessorAttributes = (attributes.length == 1 && !firstAccessorAttributes) || attributes.length == 2;
     const accessors = node["terminal"].map(child => child.value).filter(s => ["get", "set"].includes(s));
@@ -1422,8 +1409,8 @@ function printIndexerDeclarationBody(path, options, print) {
     const node = path.getValue();
     const docs = [];
 
-    const accessorDeclarations = getAny(node, "accessor_declarations");
-    const expression = getAny(node, "expression");
+    const accessorDeclarations = findAnyProperty(node, "accessor_declarations");
+    const expression = findAnyProperty(node, "expression");
 
     if (accessorDeclarations) {
         docs.push(
@@ -1460,7 +1447,7 @@ function printOperatorDeclarationSignature(path, options, print) {
 
 function printOperatorDeclarationBody(path, options, print) {
     const node = path.getValue();
-    const body = getAny(node, "body");
+    const body = findAnyProperty(node, "body");
 
     if (body) {
         return path.call(print, body, 0);
@@ -1496,13 +1483,14 @@ function printStatementList(path, options, print) {
 function printLabeledStatement(path, options, print) {
     const node = path.getValue();
 
-    const identifier = getAny(node, "identifier");
+    const identifier = findAnyProperty(node, "identifier");
 
     if (!identifier) {
         return path.call(print, "children", 0);
     }
 
-    const statement = getAny(node,
+    const statement = findAnyProperty(
+        node,
         "empty_statement",
         "labeled_statement",
         "declaration_statement",
@@ -1536,14 +1524,14 @@ function printFunctionDeclarationStatement(path, options, print) {
 function printVariableDeclarationStatement(path, options, print) {
     const node = path.getValue();
 
-    const identifier = getAny(node, "identifier");
+    const identifier = findAnyProperty(node, "identifier");
 
     if (identifier) {
         return;
     }
 
-    const declaration = getAny(node, "local_variable_declaration", "local_constant_declaration");
-    const statement = getAny(node, "labeled_statement", "embedded_statement");
+    const declaration = findAnyProperty(node, "local_variable_declaration", "local_constant_declaration");
+    const statement = findAnyProperty(node, "labeled_statement", "embedded_statement");
 
     if (statement) {
         return path.call(print, statement, 0);
@@ -1555,9 +1543,9 @@ function printVariableDeclarationStatement(path, options, print) {
 function printVariableDeclarator(path, options, print) {
     const node = path.getValue();
 
-    const initializer = getAny(node, "local_variable_initializer", "variable_initializer");
+    const initializer = findAnyProperty(node, "local_variable_initializer", "variable_initializer");
 
-    const identifier = getAny(node, "local_variable_identifier", "identifier");
+    const identifier = findAnyProperty(node, "local_variable_identifier", "identifier");
 
     const docs = [path.call(print, identifier, 0)];
 
@@ -1592,8 +1580,8 @@ function printLocalVariableIdentifier(path, options, print) {
 
 function printVariableDeclaration(path, options, print) {
     const node = path.getValue();
-    const variableType = getAny(node, "local_variable_type");
-    const variableDeclarators = getAll(node, "local_variable_declarator", "variable_declarator");
+    const variableType = findAnyProperty(node, "local_variable_type");
+    const variableDeclarators = findAllProperties(node, "local_variable_declarator", "variable_declarator");
 
     const docs = [];
 
@@ -1621,7 +1609,7 @@ function printLocalConstantDeclaration(path, options, print) {
 
 function printLocalVariableType(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, "type");
+    const type = findAnyProperty(node, "type");
 
     if (type) {
         return path.call(print, "type", 0);
@@ -1632,7 +1620,7 @@ function printLocalVariableType(path, options, print) {
 
 function printVariableInitializer(path, options, print) {
     const node = path.getValue();
-    const initializer = getAny(node, "expression", "array_initializer", "local_variable_initializer_unsafe");
+    const initializer = findAnyProperty(node, "expression", "array_initializer", "local_variable_initializer_unsafe");
 
     return path.call(print, initializer, 0);
 }
@@ -1651,14 +1639,14 @@ function printNewExpression(path, options, print) {
     const child = node.children[1];
 
     if (isType(child, "type")) {
-        const objectCreationExpression = getAny(node, "object_creation_expression");
-        const objectOrCollectionInitializer = getAny(node, "object_or_collection_initializer");
+        const objectCreationExpression = findAnyProperty(node, "object_creation_expression");
+        const objectOrCollectionInitializer = findAnyProperty(node, "object_or_collection_initializer");
 
         expressionPart.push(path.call(print, "type", 0));
 
         if (objectCreationExpression) {
-            const argumentList = getAny(node[objectCreationExpression][0], "argument_list");
-            const initializer = getAny(node[objectCreationExpression][0], "object_or_collection_initializer");
+            const argumentList = findAnyProperty(node[objectCreationExpression][0], "argument_list");
+            const initializer = findAnyProperty(node[objectCreationExpression][0], "object_or_collection_initializer");
 
             const argPart = [];
 
@@ -1678,9 +1666,9 @@ function printNewExpression(path, options, print) {
         } else if (objectOrCollectionInitializer) {
             expressionPart.push(" ", path.call(print, objectOrCollectionInitializer, 0));
         } else {
-            const expressionList = getAny(node, "expression_list");
-            const rankSpecifiers = getAny(node, "rank_specifier");
-            const arrayInitializer = getAny(node, "array_initializer");
+            const expressionList = findAnyProperty(node, "expression_list");
+            const rankSpecifiers = findAnyProperty(node, "rank_specifier");
+            const arrayInitializer = findAnyProperty(node, "array_initializer");
 
             if (expressionList) {
                 expressionPart.push("[", path.call(print, expressionList, 0), "]");
@@ -1705,8 +1693,8 @@ function printNewExpression(path, options, print) {
 
 function printBaseAccessExpression(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
-    const expressionList = getAny(node, "expression_list");
+    const identifier = findAnyProperty(node, "identifier");
+    const expressionList = findAnyProperty(node, "expression_list");
 
     const docs = ["base"];
 
@@ -1714,7 +1702,7 @@ function printBaseAccessExpression(path, options, print) {
         docs.push(".");
         docs.push(path.call(print, "identifier", 0));
 
-        const typeArgumentList = getAny(node, "type_argument_list");
+        const typeArgumentList = findAnyProperty(node, "type_argument_list");
 
         if (typeArgumentList) {
             docs.push(path.call(print, typeArgumentList, 0));
@@ -1744,7 +1732,7 @@ function printInterpolatedRegularString(path, options, print) {
 
 function printInterpolatedStringPart(path, options, print) {
     const node = path.getValue();
-    const expression = getAny(node, "interpolated_string_expression");
+    const expression = findAnyProperty(node, "interpolated_string_expression");
 
     if (expression) {
         return group(concat(["{", path.call(print, expression, 0), "}"]));
@@ -1788,7 +1776,7 @@ function printThrowExpression(path, options, print) {
 
 function printBreakingStatement(path, options, print) {
     const node = path.getValue();
-    const expression = getAny(node, "expression");
+    const expression = findAnyProperty(node, "expression");
 
     return group(
         concat([
@@ -1800,8 +1788,8 @@ function printBreakingStatement(path, options, print) {
 
 function printGotoStatement(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
-    const expression = getAny(node, "expression");
+    const identifier = findAnyProperty(node, "identifier");
+    const expression = findAnyProperty(node, "expression");
 
     const docs = ["goto"];
 
@@ -1840,9 +1828,9 @@ function printDoStatement(path, options, print) {
 
 function printForStatement(path, options, print) {
     const node = path.getValue();
-    const forInitializer = getAny(node, "for_initializer");
-    const expression = getAny(node, "expression");
-    const forIterator = getAny(node, "for_iterator");
+    const forInitializer = findAnyProperty(node, "for_initializer");
+    const expression = findAnyProperty(node, "expression");
+    const forIterator = findAnyProperty(node, "for_iterator");
 
     return group(
         concat([
@@ -1876,7 +1864,7 @@ function printForStatement(path, options, print) {
 
 function printForInitializer(path, options, print) {
     const node = path.getValue();
-    const localVariableDeclaration = getAny(node, "local_variable_declaration");
+    const localVariableDeclaration = findAnyProperty(node, "local_variable_declaration");
 
     if (localVariableDeclaration) {
         return group(path.call(print, localVariableDeclaration, 0));
@@ -1922,7 +1910,7 @@ function printForeachStatement(path, options, print) {
 
 function printSwitchStatement(path, options, print) {
     const node = path.getValue();
-    const switchSections = getAny(node, "switch_section");
+    const switchSections = findAnyProperty(node, "switch_section");
 
     const docs = [group(concat(["switch", " ", "(", indent(path.call(print, "expression", 0)), softline, ")"])), line];
 
@@ -1948,9 +1936,9 @@ function printSwitchSection(path, options, print) {
 
 function printSwitchLabel(path, options, print) {
     const node = path.getValue();
-    const expression = getAny(node, "expression");
-    const type = getAny(node, "type");
-    const switchWhen = getAny(node, "switch_when");
+    const expression = findAnyProperty(node, "expression");
+    const type = findAnyProperty(node, "type");
+    const switchWhen = findAnyProperty(node, "switch_when");
 
     if (expression) {
         const docs = ["case", " "];
@@ -1995,7 +1983,7 @@ function printCheckedExpression(path, options, print) {
 
 function printDefaultValueExpression(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, "type");
+    const type = findAnyProperty(node, "type");
 
     const docs = ["default"];
 
@@ -2008,7 +1996,7 @@ function printDefaultValueExpression(path, options, print) {
 
 function printAnonymousMethodExpression(path, options, print) {
     const node = path.getValue();
-    const parameterList = getAny(node, "explicit_anonymous_function_parameter_list");
+    const parameterList = findAnyProperty(node, "explicit_anonymous_function_parameter_list");
     const isAsync = isSymbol(node.children[0], "async");
 
     const signaturePart = [];
@@ -2034,7 +2022,7 @@ function printAnonymousMethodExpression(path, options, print) {
 
 function printTypeofExpression(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, "unbound_type_name", "type");
+    const type = findAnyProperty(node, "unbound_type_name", "type");
 
     return group(
         concat([
@@ -2086,14 +2074,15 @@ function printGenericDimensionSpecifier(path) {
 
 function printCapturingStatement(path, options, print) {
     const node = path.getValue();
-    const capturedExpressions = getAll(node,
+    const capturedExpressions = findAllProperties(
+        node,
         "expression",
         "resource_acquisition",
         "pointer_type",
         "fixed_pointer_declarators",
     );
     const embeddedStatement = getDescendant(node, "embedded_statement");
-    const hasBraces = !!getAny(embeddedStatement, "block");
+    const hasBraces = !!findAnyProperty(embeddedStatement, "block");
 
     const docs = [
         group(
@@ -2123,7 +2112,7 @@ function printCapturingStatement(path, options, print) {
     ];
 
     const onlyContainsACapturingStatement =
-        !hasBraces && !!getAny(embeddedStatement, "using_statement", "fixed_statement", "lock_statement");
+        !hasBraces && !!findAnyProperty(embeddedStatement, "using_statement", "fixed_statement", "lock_statement");
 
     const statementDocs = path.call(print, "embedded_statement", 0);
 
@@ -2138,7 +2127,7 @@ function printCapturingStatement(path, options, print) {
 
 function printYieldStatement(path, options, print) {
     const node = path.getValue();
-    const expression = getAny(node, "expression");
+    const expression = findAnyProperty(node, "expression");
 
     const docs = ["yield"];
 
@@ -2161,7 +2150,7 @@ function printResourceAcquisition(path, options, print) {
 function printTryStatement(path, options, print) {
     const node = path.getValue();
     const block = path.call(print, "block", 0);
-    const clauses = getAll(node, "catch_clauses", "finally_clause");
+    const clauses = findAllProperties(node, "catch_clauses", "finally_clause");
 
     return group(
         concat([
@@ -2179,15 +2168,15 @@ function printTryStatement(path, options, print) {
 
 function printCatchClauses(path, options, print) {
     const node = path.getValue();
-    const clauses = getAll(node, "specific_catch_clause", "general_catch_clause");
+    const clauses = findAllProperties(node, "specific_catch_clause", "general_catch_clause");
 
     return join(hardline, _.flatten(clauses.map(clause => path.map(print, clause))));
 }
 
 function printCatchClause(path, options, print) {
     const node = path.getValue();
-    const classType = getAny(node, "class_type");
-    const exceptionFilter = getAny(node, "exception_filter");
+    const classType = findAnyProperty(node, "class_type");
+    const exceptionFilter = findAnyProperty(node, "exception_filter");
 
     const catchPart = ["catch"];
 
@@ -2196,7 +2185,7 @@ function printCatchClause(path, options, print) {
 
         const exceptionPart = [path.call(print, classType, 0)];
 
-        const identifier = getAny(node, "identifier");
+        const identifier = findAnyProperty(node, "identifier");
 
         if (identifier) {
             exceptionPart.push(" ", path.call(print, identifier, 0));
@@ -2228,7 +2217,7 @@ function printObjectOrCollectionInitializer(path, options, print) {
 
 function printObjectInitializer(path, options, print) {
     const node = path.getValue();
-    const memberInitializerList = getAny(node, "member_initializer_list", "member_declarator_list");
+    const memberInitializerList = findAnyProperty(node, "member_initializer_list", "member_declarator_list");
 
     const docs = ["{"];
 
@@ -2260,7 +2249,7 @@ function printTupleLiteral(path, options, print) {
 
 function printTupleElementInitializer(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
+    const identifier = findAnyProperty(node, "identifier");
 
     const docs = [];
 
@@ -2279,8 +2268,8 @@ function printMemberInitializerList(path, options, print) {
 
 function printMemberInitializer(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
-    const expression = getAny(node, "expression");
+    const identifier = findAnyProperty(node, "identifier");
+    const expression = findAnyProperty(node, "expression");
 
     const docs = [];
 
@@ -2306,7 +2295,7 @@ function printMemberDeclaratorList(path, options, print) {
 
 function printMemberDeclarator(path, options, print) {
     const node = path.getValue();
-    const primaryExpression = getAny(node, "primary_expression");
+    const primaryExpression = findAnyProperty(node, "primary_expression");
 
     if (primaryExpression) {
         return path.call(print, primaryExpression, 0);
@@ -2324,7 +2313,7 @@ function printMemberDeclarator(path, options, print) {
 
 function printElementInitializer(path, options, print) {
     const node = path.getValue();
-    const nonAssignmentExpression = getAny(node, "non_assignment_expression");
+    const nonAssignmentExpression = findAnyProperty(node, "non_assignment_expression");
 
     if (nonAssignmentExpression) {
         return path.call(print, nonAssignmentExpression, 0);
@@ -2368,7 +2357,7 @@ function printBracketExpression(path, options, print) {
 
 function printIndexerArgument(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
+    const identifier = findAnyProperty(node, "identifier");
 
     const docs = [];
 
@@ -2387,7 +2376,7 @@ function printQueryExpression(path, options, print) {
 
 function printFromClause(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, "type");
+    const type = findAnyProperty(node, "type");
 
     const fromPart = ["from", line];
 
@@ -2404,8 +2393,8 @@ function printFromClause(path, options, print) {
 
 function printQueryBody(path, options, print) {
     const node = path.getValue();
-    const queryContinuation = getAny(node, "query_continuation");
-    const queryBodyClause = getAny(node, "query_body_clause");
+    const queryContinuation = findAnyProperty(node, "query_continuation");
+    const queryBodyClause = findAnyProperty(node, "query_body_clause");
 
     const docs = [];
 
@@ -2438,7 +2427,7 @@ function printWhereClause(path, options, print) {
 
 function printCombinedJoinClause(path, options, print) {
     const node = path.getValue();
-    const type = getAny(node, "type");
+    const type = findAnyProperty(node, "type");
     const identifierDocs = path.map(print, "identifier");
     const expressionDocs = path.map(print, "expression");
 
@@ -2477,7 +2466,7 @@ function printOrderByClause(path, options, print) {
 
 function printOrdering(path, options, print) {
     const node = path.getValue();
-    const dir = getAny(node, "terminal");
+    const dir = findAnyProperty(node, "terminal");
 
     return group(concat([path.call(print, "expression", 0), line, path.call(print, dir, 0)]));
 }
@@ -2520,8 +2509,9 @@ function printLambdaExpression(path, options, print) {
 
 function printAnonymousFunctionSignature(path, options, print) {
     const node = path.getValue();
-    const identifier = getAny(node, "identifier");
-    const parameters = getAny(node,
+    const identifier = findAnyProperty(node, "identifier");
+    const parameters = findAnyProperty(
+        node,
         "explicit_anonymous_function_parameter_list",
         "implicit_anonymous_function_parameter_list",
     );
@@ -2549,7 +2539,7 @@ function printAnonymousFunctionBody(path, options, print) {
 
 function printAnonymousFunctionParameterList(path, options, print) {
     const node = path.getValue();
-    const parameters = getAny(node, "explicit_anonymous_function_parameter", "identifier");
+    const parameters = findAnyProperty(node, "explicit_anonymous_function_parameter", "identifier");
 
     return printCommaList(path.map(print, parameters));
 }
@@ -2568,11 +2558,29 @@ function printExplicitAnonymousFunctionParameter(path, options, print) {
     return group(concat(docs));
 }
 
+const remappedTypes = {
+    accessor_body: "body",
+    method_body: "body",
+    struct_member_declaration: "class_member_declaration",
+    throw_statement: "return_statement",
+    break_statement: "return_statement",
+    continue_statement: "return_statement",
+    predefined_type: "simple_type",
+    numeric_type: "simple_type",
+    integral_type: "simple_type",
+    floating_point_type: "simple_type",
+};
+
 function printNode(path, options, print) {
     const node = path.getValue();
 
-    if (types[node.nodeType]) {
-        return types[node.nodeType](path, options, print);
+    let nodeType = node.nodeType;
+    if (remappedTypes[nodeType]) {
+        nodeType = remappedTypes[nodeType];
+    }
+
+    if (types[nodeType]) {
+        return types[nodeType](path, options, print);
     }
 
     // TODO split these all apart, and squash this down? would need to detect if a file doesn't exist and then error
@@ -2583,8 +2591,6 @@ function printNode(path, options, print) {
             return printExternAliasDirectives(path, options, print);
         case "extern_alias_directive":
             return printExternAliasDirective(path, options, print);
-        case "terminal":
-            return printTerminal(path, options, print);
         case "identifier":
             return printIdentifier(path, options, print);
         case "keyword":
@@ -2625,12 +2631,6 @@ function printNode(path, options, print) {
             return printTupleType(path, options, print);
         case "tuple_element_type":
             return printTupleElementType(path, options, print);
-        case "predefined_type":
-        case "simple_type":
-        case "numeric_type":
-        case "integral_type":
-        case "floating_point_type":
-            return printSimpleType(path, options, print);
         case "pointer_type":
             return printPointerType(path, options, print);
         case "array_type":
@@ -2675,9 +2675,6 @@ function printNode(path, options, print) {
             return printLocalVariableInitializerUnsafe(path, options, print);
         case "parameter_array":
             return printParameterArray(path, options, print);
-        case "accessor_body":
-        case "method_body":
-            return types["body"](path, options, print);
         case "expression":
             return printExpression(path, options, print);
         case "non_assignment_expression":
@@ -2765,8 +2762,6 @@ function printNode(path, options, print) {
             return printClassOrStructMemberDeclarations(path, options, print);
         case "enum_member_declaration":
             return printEnumMemberDeclaration(path, options, print);
-        case "struct_member_declaration":
-            return types["class_member_declaration"](path, options, print);
         case "local_function_declaration":
             return printCommonMemberDeclaration(path, options, print);
         case "common_member_declaration":
@@ -2870,11 +2865,6 @@ function printNode(path, options, print) {
             return printInterpolatedStringPart(path, options, print);
         case "interpolated_string_expression":
             return printInterpolatedStringExpression(path, options, print);
-        case "return_statement":
-        case "throw_statement":
-        case "break_statement":
-        case "continue_statement":
-            return printBreakingStatement(path, options, print);
         case "goto_statement":
             return printGotoStatement(path, options, print);
         case "switch_statement":

@@ -1,6 +1,6 @@
 import { concat, hardline, indent } from "../builders";
 import { printDanglingComments } from "../comments";
-import { getAny, PrintType } from "../helpers";
+import { findAnyProperty, PrintType } from "../helpers";
 
 export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
@@ -8,7 +8,7 @@ export const print: PrintType = (path, options, print) => {
 
     docs.push("{");
 
-    const statementList = getAny(node, "statement_list");
+    const statementList = findAnyProperty(node, "statement_list");
 
     if (statementList) {
         docs.push(indent(concat([hardline, path.call(print, statementList, 0)])));

@@ -1,10 +1,10 @@
 export interface NodeType<T = string> {
-    nodeType: T,
-    start: number,
-    end: number,
-    lineStart: number,
-    lineEnd: number,
-    value?: string,
+    nodeType: T;
+    start: number;
+    end: number;
+    lineStart: number;
+    lineEnd: number;
+    value?: string;
 }
 
 export interface IfStatement extends NodeType<"if_statement"> {

@@ -1,5 +1,5 @@
 import { concat, group, hardline, join, line } from "../builders";
-import { getAny, PrintType } from "../helpers";
+import { findAnyProperty, PrintType } from "../helpers";
 import {
     printMethodDeclarationBody,
     printMethodDeclarationSignatureBase,
@@ -10,11 +10,11 @@ import {
 
 export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
-    const attributes = getAny(node, "attributes");
-    const allMemberModifiers = getAny(node, "all_member_modifiers");
-    const commonMemberDeclaration = getAny(node, "common_member_declaration");
-    const destructorDefinition = getAny(node, "destructor_definition");
-    const type = getAny(node, "type");
+    const attributes = findAnyProperty(node, "attributes");
+    const allMemberModifiers = findAnyProperty(node, "all_member_modifiers");
+    const commonMemberDeclaration = findAnyProperty(node, "common_member_declaration");
+    const destructorDefinition = findAnyProperty(node, "destructor_definition");
+    const type = findAnyProperty(node, "type");
 
     const attributesPart = [];
     const signaturePart = [];
@@ -29,8 +29,12 @@ export const print: PrintType = (path, options, print) => {
     }
 
     if (commonMemberDeclaration) {
-        // @ts-ignore
-        const declaration = getAny(node[commonMemberDeclaration][0], "method_declaration", "typed_member_declaration");
+        const declaration = findAnyProperty(
+            // @ts-ignore
+            node[commonMemberDeclaration][0],
+            "method_declaration",
+            "typed_member_declaration",
+        );
 
         if (declaration === "method_declaration") {
             // It's always void (otherwise it's a typed_member_declaration).
