@@ -1893,36 +1893,6 @@ function printConstantPattern(path, options, print) {
     return path.call(print, "conditional_or_expression", 0);
 }
 
-function printIfStatement(path, options, print) {
-    const node = path.getValue();
-    const expression = path.call(print, "expression", 0);
-    const ifBodies = path.map(print, "embedded_statement");
-    const hasElse = ifBodies.length > 1;
-    const ifHasBraces = !!node["embedded_statement"][0]["block"];
-    const elseHasBraces = hasElse && !!node["embedded_statement"][1]["block"];
-    const hasElseIf = hasElse && !!node["embedded_statement"][1]["if_statement"];
-
-    const docs = ["if", " ", "(", group(concat([indent(group(concat([softline, expression]))), softline])), ")"];
-
-    if (ifHasBraces) {
-        docs.push(hardline, ifBodies[0]);
-    } else {
-        docs.push(indent(group(concat([hasElse ? hardline : line, ifBodies[0]]))));
-    }
-
-    if (hasElse) {
-        docs.push(hardline, "else");
-
-        if (elseHasBraces || hasElseIf) {
-            docs.push(hasElseIf ? " " : hardline, ifBodies[1]);
-        } else {
-            docs.push(indent(group(concat([hardline, ifBodies[1]]))));
-        }
-    }
-
-    return group(concat(docs));
-}
-
 function printThrowExpression(path, options, print) {
     const node = path.getValue();
 
@@ -2713,6 +2683,7 @@ function printExplicitAnonymousFunctionParameter(path, options, print) {
 function printNode(path, options, print) {
     const node = path.getValue();
 
+    // TODO split these all apart, and squash this down? would need to detect if a file doesn't exist and then error
     switch (node.nodeType) {
         case "compilation_unit":
             return printCompilationUnit(path, options, print);
@@ -3014,7 +2985,7 @@ function printNode(path, options, print) {
         case "interpolated_string_expression":
             return printInterpolatedStringExpression(path, options, print);
         case "if_statement":
-            return printIfStatement(path, options, print);
+            return require("./if_statement")(path, options, print);
         case "return_statement":
         case "throw_statement":
         case "break_statement":
