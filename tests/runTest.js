@@ -2,11 +2,13 @@ const fs = require("fs");
 const path = require("path");
 const prettier = require("prettier");
 
+// TODO just use two files, instead of three
+
 function runTest(directory, name) {
-    const codePath = path.resolve(directory, name + ".cs")
+    const codePath = path.resolve(directory, name + ".cs");
     const code = fs.readFileSync(codePath, "utf8");
 
-    const expectedPath = codePath.replace(".cs", ".expected.cs")
+    const expectedPath = codePath.replace(".cs", ".expected.cs");
 
     if (!fs.existsSync(expectedPath)) {
         fs.writeFileSync(expectedPath, code, "utf8");

@@ -50,10 +50,6 @@ function printTypeArgumentList(path, options, print) {
     return group(concat(["<", indent(group(printCommaList(path.map(print, "type")))), softline, ">"]));
 }
 
-function printArgumentList(path, options, print) {
-    return printCommaList(path.map(print, "argument"));
-}
-
 function printArgument(path, options, print) {
     const node = path.getValue();
     const identifier = findAnyProperty(node, "identifier");
@@ -288,36 +284,8 @@ function printBinaryishExpression(path, options, print) {
     );
 }
 
-function printExpression(path, options, print) {
-    return path.call(print, "children", 0);
-}
-
 function printPrimaryExpressionStart(path, options, print) {
     return path.call(print, "children", 0);
-}
-
-function printPrimaryExpression(path, options, print) {
-    const parts = path.map(print, "children");
-
-    // Partition over ".".
-    const [headPart, ...tailParts] = parts.reduce(
-        (groups, part) => {
-            if (part === ".") {
-                groups.push([]);
-            }
-
-            groups[groups.length - 1].push(part);
-
-            return groups;
-        },
-        [[]],
-    );
-
-    if (tailParts.length === 0) {
-        return group(concat(headPart));
-    }
-
-    return concat([group(concat(headPart)), indent(group(concat([softline, join(softline, tailParts.map(concat))])))]);
 }
 
 function printUnaryExpression(path, options, print) {
@@ -675,13 +643,6 @@ function printMethodDeclaration(path, options, print) {
         printMethodDeclarationSignatureConstraints(path, options, print),
         printMethodDeclarationBody(path, options, print),
     ]);
-}
-
-function printMethodInvocation(path, options, print) {
-    const node = path.getValue();
-    const argumentList = findAnyProperty(node, "argument_list");
-
-    return group(concat(["(", argumentList ? path.call(print, argumentList, 0) : softline, ")"]));
 }
 
 function printQualifiedIdentifier(path, options, print) {
@@ -2275,7 +2236,13 @@ const remappedTypes = {
     enum_definition: "class_definition",
 };
 
+let levels = "";
+let output = "";
+let isFirst = true;
+
 function printNode(path, options, print) {
+    const doIsFirst = isFirst;
+    isFirst = false;
     const node = path.getValue();
 
     let nodeType = node.nodeType;
@@ -2283,400 +2250,402 @@ function printNode(path, options, print) {
         nodeType = remappedTypes[nodeType];
     }
 
-    if (types[nodeType]) {
-        return types[nodeType](path, options, print);
-    }
+    output += levels + nodeType + (node.value ? ": " + node.value : "") + "\r\n";
+    levels += " ";
 
-    switch (node.nodeType) {
-        case "extern_alias_directives":
-            return printExternAliasDirectives(path, options, print);
-        case "extern_alias_directive":
-            return printExternAliasDirective(path, options, print);
-        case "identifier":
-            return printIdentifier(path, options, print);
-        case "keyword":
-        case "this_reference_expression":
-        case "parameter_modifier":
-            return printKeyword(path, options, print);
-        case "using_namespace_directive":
-            return printUsingNamespaceDirective(path, options, print);
-        case "method_member_name":
-        case "unbound_type_name":
-            return printUnboundTypeName(path, options, print);
-        case "using_alias_directive":
-            return printUsingAliasDirective(path, options, print);
-        case "type_argument_list":
-            return printTypeArgumentList(path, options, print);
-        case "argument_list":
-            return printArgumentList(path, options, print);
-        case "argument":
-            return printArgument(path, options, print);
-        case "typed_argument":
-            return printTypedArgument(path, options, print);
-        case "type_pattern":
-        case "var_pattern":
-            return printTypeOrVarPattern(path, options, print);
-        case "constant_pattern":
-            return printConstantPattern(path, options, print);
-        case "type":
-            return printType(path, options, print);
-        case "base_type":
-            return printBaseType(path, options, print);
-        case "class_type":
-            return printClassType(path, options, print);
-        case "tuple_type":
-            return printTupleType(path, options, print);
-        case "tuple_element_type":
-            return printTupleElementType(path, options, print);
-        case "pointer_type":
-            return printPointerType(path, options, print);
-        case "array_type":
-            return printArrayType(path, options, print);
-        case "using_static_directive":
-            return printUsingStaticDirective(path, options, print);
-        case "global_attribute_section":
-            return printGlobalAttributeSection(path, options, print);
-        case "global_attribute_target":
-            return printGlobalAttributeTarget(path, options, print);
-        case "attribute_list":
-            return printAttributeList(path, options, print);
-        case "attribute":
-            return printAttribute(path, options, print);
-        case "attributes":
-            return printAttributes(path, options, print);
-        case "attribute_argument":
-            return printAttributeArgument(path, options, print);
-        case "attribute_section":
-            return printAttributeSection(path, options, print);
-        case "attribute_target":
-            return printAttributeTarget(path, options, print);
-        case "simple_name":
-            return printSimpleName(path, options, print);
-        case "member_name":
-            return printMemberName(path, options, print);
-        case "formal_parameter_list":
-            return printFormalParameterList(path, options, print);
-        case "fixed_parameters":
-            return printFixedParameters(path, options, print);
-        case "fixed_parameter":
-            return printFixedParameter(path, options, print);
-        case "fixed_pointer_declarators":
-            return printFixedPointerDeclarators(path, options, print);
-        case "fixed_pointer_declarator":
-            return printFixedPointerDeclarator(path, options, print);
-        case "fixed_pointer_initializer":
-            return printFixedPointerInitializer(path, options, print);
-        case "fixed_size_buffer_declarator":
-            return printFixedSizeBufferDeclarator(path, options, print);
-        case "local_variable_initializer_unsafe":
-            return printLocalVariableInitializerUnsafe(path, options, print);
-        case "parameter_array":
-            return printParameterArray(path, options, print);
-        case "expression":
-            return printExpression(path, options, print);
-        case "non_assignment_expression":
-            return printNonAssignmentExpression(path, options, print);
-        case "throw_expression":
-            return printThrowExpression(path, options, print);
-        case "conditional_expression":
-            return printConditionalExpression(path, options, print);
-        case "null_coalescing_expression":
-            return printNullCoalescingExpression(path, options, print);
-        case "conditional_or_expression":
-        case "conditional_and_expression":
-        case "inclusive_or_expression":
-        case "exclusive_or_expression":
-        case "and_expression":
-        case "equality_expression":
-        case "relational_expression":
-        case "shift_expression":
-        case "additive_expression":
-        case "multiplicative_expression":
-            return printBinaryishExpression(path, options, print);
-        case "literal_expression":
-            return printLiteralExpression(path, options, print);
-        case "literal":
-        case "string_literal":
-        case "boolean_literal":
-            return printLiteral(path, options, print);
-        case "tuple_literal":
-            return printTupleLiteral(path, options, print);
-        case "predefined_type_expression":
-            return printPredefinedTypeExpression(path, options, print);
-        case "qualified_alias_member_expression":
-            return printQualifiedAliasMemberExpression(path, options, print);
-        case "literal_access_expression":
-            return printLiteralAccessExpression(path, options, print);
-        case "primary_expression_start":
-            return printPrimaryExpressionStart(path, options, print);
-        case "primary_expression":
-            return printPrimaryExpression(path, options, print);
-        case "unary_expression":
-            return printUnaryExpression(path, options, print);
-        case "tuple_expression":
-            return printTupleExpression(path, options, print);
-        case "parenthesis_expressions":
-            return printParenthesisExpression(path, options, print);
-        case "simple_name_expression":
-            return printSimpleNameExpression(path, options, print);
-        case "namespace_member_declarations":
-            return printNamespaceMemberDeclarations(path, options, print);
-        case "namespace_member_declaration":
-            return printNamespaceMemberDeclaration(path, options, print);
-        case "type_declaration":
-            return printTypeDeclaration(path, options, print);
-        case "namespace_declaration":
-            return printNamespaceDeclaration(path, options, print);
-        case "interface_type_list":
-            return printInterfaceTypeList(path, options, print);
-        case "interface_base":
-        case "class_base":
-        case "enum_base":
-        case "struct_interfaces":
-            return printStructBase(path, options, print);
-        case "qualified_identifier":
-            return printQualifiedIdentifier(path, options, print);
-        case "qualified_alias_member":
-            return printQualifiedAliasMember(path, options, print);
-        case "all_member_modifiers":
-            return printAllMemberModifiers(path, options, print);
-        case "all_member_modifier":
-            return printAllMemberModifier(path, options, print);
-        case "accessor_modifier":
-            return printAccessorModifier(path, options, print);
-        case "class_member_declarations":
-        case "struct_member_declarations":
-            return printClassOrStructMemberDeclarations(path, options, print);
-        case "enum_member_declaration":
-            return printEnumMemberDeclaration(path, options, print);
-        case "local_function_declaration":
-            return printCommonMemberDeclaration(path, options, print);
-        case "common_member_declaration":
-            return printCommonMemberDeclaration(path, options, print);
-        case "constructor_declaration":
-        case "destructor_definition":
-            return printMethodDeclaration(path, options, print);
-        case "constructor_initializer":
-            return printConstructorInitializer(path, options, print);
-        case "arg_declaration":
-            return printArgDeclaration(path, options, print);
-        case "constant_declaration":
-            return printConstantDeclaration(path, options, print);
-        case "constant_declarators":
-            return printConstantDeclarators(path, options, print);
-        case "constant_declarator":
-            return printConstantDeclarator(path, options, print);
-        case "interface_definition":
-            return printInterfaceDefinition(path, options, print);
-        case "type_parameter_list":
-        case "variant_type_parameter_list":
-            return printTypeParameterList(path, options, print);
-        case "type_parameter":
-        case "variant_type_parameter":
-            return printTypeParameter(path, options, print);
-        case "variance_annotation":
-            return printVarianceAnnotation(path, options, print);
-        case "delegate_definition":
-            return printDelegateDefinition(path, options, print);
-        case "return_type":
-            return printReturnType(path, options, print);
-        case "type_parameter_constraints_clauses":
-            return printTypeParameterConstraintsClauses(path, options, print);
-        case "type_parameter_constraints_clause":
-            return printTypeParameterConstraintsClause(path, options, print);
-        case "type_parameter_constraints":
-            return printTypeParameterConstraints(path, options, print);
-        case "constructor_constraint":
-            return printConstructorConstraint(path, options, print);
-        case "primary_constraint":
-            return printPrimaryConstraint(path, options, print);
-        case "secondary_constraints":
-            return printSecondaryConstraints(path, options, print);
-        case "assignment":
-            return printAssignment(path, options, print);
-        case "right_arrow":
-        case "right_shift":
-        case "right_shift_assignment":
-            return printRightOperator(path, options, print);
-        case "assignment_operator":
-        case "overloadable_operator":
-            return printOperator(path, options, print);
-        case "field_declaration":
-            return printFieldDeclaration(path, options, print);
-        case "event_declaration":
-            return printEventDeclaration(path, options, print);
-        case "statement_list":
-            return printStatementList(path, options, print);
-        case "variable_declaration_statement":
-            return printVariableDeclarationStatement(path, options, print);
-        case "function_declaration_statement":
-            return printFunctionDeclarationStatement(path, options, print);
-        case "labeled_statement":
-            return printLabeledStatement(path, options, print);
-        case "embedded_statement":
-            return printEmbeddedStatement(path, options, print);
-        case "local_variable_declaration":
-        case "variable_declarators":
-            return printVariableDeclaration(path, options, print);
-        case "local_constant_declaration":
-            return printLocalConstantDeclaration(path, options, print);
-        case "local_variable_identifier":
-            return printLocalVariableIdentifier(path, options, print);
-        case "expression_statement":
-            return printExpressionStatement(path, options, print);
-        case "empty_statement":
-            return printEmptyStatement(path, options, print);
-        case "empty_embedded_statement":
-            return printEmptyEmbeddedStatement(path, options, print);
-        case "local_variable_type":
-            return printLocalVariableType(path, options, print);
-        case "variable_declarator":
-        case "local_variable_declarator":
-            return printVariableDeclarator(path, options, print);
-        case "sizeof_expression":
-            return printSizeofExpression(path, options, print);
-        case "object_creation_expression":
-            return printObjectCreationExpression(path, options, print);
-        case "new_expression":
-            return printNewExpression(path, options, print);
-        case "base_access_expression":
-            return printBaseAccessExpression(path, options, print);
-        case "method_invocation":
-            return printMethodInvocation(path, options, print);
-        case "interpolated_verbatim_string":
-            return printInterpolatedVerbatimString(path, options, print);
-        case "interpolated_regular_string":
-            return printInterpolatedRegularString(path, options, print);
-        case "interpolated_regular_string_part":
-        case "interpolated_verbatim_string_part":
-            return printInterpolatedStringPart(path, options, print);
-        case "interpolated_string_expression":
-            return printInterpolatedStringExpression(path, options, print);
-        case "goto_statement":
-            return printGotoStatement(path, options, print);
-        case "switch_statement":
-            return printSwitchStatement(path, options, print);
-        case "switch_section":
-            return printSwitchSection(path, options, print);
-        case "switch_label":
-            return printSwitchLabel(path, options, print);
-        case "switch_filter":
-            return printSwitchFilter(path, options, print);
-        case "while_statement":
-            return printWhileStatement(path, options, print);
-        case "for_initializer":
-            return printForInitializer(path, options, print);
-        case "for_iterator":
-            return printForIterator(path, options, print);
-        case "foreach_statement":
-            return printForeachStatement(path, options, print);
-        case "do_statement":
-            return printDoStatement(path, options, print);
-        case "checked_statement":
-        case "unchecked_statement":
-        case "unsafe_statement":
-            return printCheckedStatement(path, options, print);
-        case "checked_expression":
-        case "unchecked_expression":
-            return printCheckedExpression(path, options, print);
-        case "default_value_expression":
-            return printDefaultValueExpression(path, options, print);
-        case "anonymous_method_expression":
-            return printAnonymousMethodExpression(path, options, print);
-        case "typeof_expression":
-            return printTypeofExpression(path, options, print);
-        case "yield_statement":
-            return printYieldStatement(path, options, print);
-        case "resource_acquisition":
-            return printResourceAcquisition(path, options, print);
-        case "try_statement":
-            return printTryStatement(path, options, print);
-        case "catch_clauses":
-            return printCatchClauses(path, options, print);
-        case "specific_catch_clause":
-        case "general_catch_clause":
-            return printCatchClause(path, options, print);
-        case "finally_clause":
-            return printFinallyClause(path, options, print);
-        case "exception_filter":
-            return printExceptionFilter(path, options, print);
-        case "object_or_collection_initializer":
-            return printObjectOrCollectionInitializer(path, options, print);
-        case "object_initializer":
-        case "anonymous_object_initializer":
-            return printObjectInitializer(path, options, print);
-        case "collection_initializer":
-            return printCollectionInitializer(path, options, print);
-        case "tuple_initializer":
-            return printTupleLiteral(path, options, print);
-        case "tuple_element_initializer":
-            return printTupleElementInitializer(path, options, print);
-        case "member_initializer_list":
-            return printMemberInitializerList(path, options, print);
-        case "member_initializer":
-            return printMemberInitializer(path, options, print);
-        case "initializer_value":
-            return printInitializerValue(path, options, print);
-        case "member_declarator_list":
-            return printMemberDeclaratorList(path, options, print);
-        case "member_declarator":
-            return printMemberDeclarator(path, options, print);
-        case "element_initializer":
-            return printElementInitializer(path, options, print);
-        case "expression_list":
-            return printExpressionList(path, options, print);
-        case "rank_specifier":
-            return printRankSpecifier(path, options, print);
-        case "generic_dimension_specifier":
-            return printGenericDimensionSpecifier(path, options, print);
-        case "array_initializer":
-            return printArrayInitializer(path, options, print);
-        case "local_variable_initializer":
-        case "variable_initializer":
-            return printVariableInitializer(path, options, print);
-        case "bracket_expression":
-            return printBracketExpression(path, options, print);
-        case "indexer_argument":
-            return printIndexerArgument(path, options, print);
-        case "query_expression":
-            return printQueryExpression(path, options, print);
-        case "from_clause":
-            return printFromClause(path, options, print);
-        case "query_body":
-            return printQueryBody(path, options, print);
-        case "query_body_clause":
-            return printQueryBodyClause(path, options, print);
-        case "where_clause":
-            return printWhereClause(path, options, print);
-        case "let_clause":
-            return printLetClause(path, options, print);
-        case "combined_join_clause":
-            return printCombinedJoinClause(path, options, print);
-        case "orderby_clause":
-            return printOrderByClause(path, options, print);
-        case "ordering":
-            return printOrdering(path, options, print);
-        case "select_or_group_clause":
-            return printSelectOrGroupClause(path, options, print);
-        case "query_continuation":
-            return printQueryContinuation(path, options, print);
-        case "interface_accessors":
-            return printInterfaceAccessors(path, options, print);
-        case "lambda_expression":
-            return printLambdaExpression(path, options, print);
-        case "anonymous_function_signature":
-            return printAnonymousFunctionSignature(path, options, print);
-        case "anonymous_function_body":
-            return printAnonymousFunctionBody(path, options, print);
-        case "implicit_anonymous_function_parameter_list":
-        case "explicit_anonymous_function_parameter_list":
-            return printAnonymousFunctionParameterList(path, options, print);
-        case "explicit_anonymous_function_parameter":
-            return printExplicitAnonymousFunctionParameter(path, options, print);
-        case "conversion_operator_declarator":
-            return printConversionOperatorDeclarator(path, options, print);
-        default:
-            throw new Error(`Unknown C# node: ${node.nodeType || node.constructor.name}`);
+    try {
+        if (types[nodeType]) {
+            return types[nodeType](path, options, print);
+        }
+
+        switch (node.nodeType) {
+            case "extern_alias_directives":
+                return printExternAliasDirectives(path, options, print);
+            case "extern_alias_directive":
+                return printExternAliasDirective(path, options, print);
+            case "identifier":
+                return printIdentifier(path, options, print);
+            case "keyword":
+            case "this_reference_expression":
+            case "parameter_modifier":
+                return printKeyword(path, options, print);
+            case "using_namespace_directive":
+                return printUsingNamespaceDirective(path, options, print);
+            case "method_member_name":
+            case "unbound_type_name":
+                return printUnboundTypeName(path, options, print);
+            case "using_alias_directive":
+                return printUsingAliasDirective(path, options, print);
+            case "type_argument_list":
+                return printTypeArgumentList(path, options, print);
+            case "argument":
+                return printArgument(path, options, print);
+            case "typed_argument":
+                return printTypedArgument(path, options, print);
+            case "type_pattern":
+            case "var_pattern":
+                return printTypeOrVarPattern(path, options, print);
+            case "constant_pattern":
+                return printConstantPattern(path, options, print);
+            case "type":
+                return printType(path, options, print);
+            case "base_type":
+                return printBaseType(path, options, print);
+            case "class_type":
+                return printClassType(path, options, print);
+            case "tuple_type":
+                return printTupleType(path, options, print);
+            case "tuple_element_type":
+                return printTupleElementType(path, options, print);
+            case "pointer_type":
+                return printPointerType(path, options, print);
+            case "array_type":
+                return printArrayType(path, options, print);
+            case "using_static_directive":
+                return printUsingStaticDirective(path, options, print);
+            case "global_attribute_section":
+                return printGlobalAttributeSection(path, options, print);
+            case "global_attribute_target":
+                return printGlobalAttributeTarget(path, options, print);
+            case "attribute_list":
+                return printAttributeList(path, options, print);
+            case "attribute":
+                return printAttribute(path, options, print);
+            case "attributes":
+                return printAttributes(path, options, print);
+            case "attribute_argument":
+                return printAttributeArgument(path, options, print);
+            case "attribute_section":
+                return printAttributeSection(path, options, print);
+            case "attribute_target":
+                return printAttributeTarget(path, options, print);
+            case "simple_name":
+                return printSimpleName(path, options, print);
+            case "member_name":
+                return printMemberName(path, options, print);
+            case "formal_parameter_list":
+                return printFormalParameterList(path, options, print);
+            case "fixed_parameters":
+                return printFixedParameters(path, options, print);
+            case "fixed_parameter":
+                return printFixedParameter(path, options, print);
+            case "fixed_pointer_declarators":
+                return printFixedPointerDeclarators(path, options, print);
+            case "fixed_pointer_declarator":
+                return printFixedPointerDeclarator(path, options, print);
+            case "fixed_pointer_initializer":
+                return printFixedPointerInitializer(path, options, print);
+            case "fixed_size_buffer_declarator":
+                return printFixedSizeBufferDeclarator(path, options, print);
+            case "local_variable_initializer_unsafe":
+                return printLocalVariableInitializerUnsafe(path, options, print);
+            case "parameter_array":
+                return printParameterArray(path, options, print);
+            case "non_assignment_expression":
+                return printNonAssignmentExpression(path, options, print);
+            case "throw_expression":
+                return printThrowExpression(path, options, print);
+            case "conditional_expression":
+                return printConditionalExpression(path, options, print);
+            case "null_coalescing_expression":
+                return printNullCoalescingExpression(path, options, print);
+            case "conditional_or_expression":
+            case "conditional_and_expression":
+            case "inclusive_or_expression":
+            case "exclusive_or_expression":
+            case "and_expression":
+            case "equality_expression":
+            case "relational_expression":
+            case "shift_expression":
+            case "additive_expression":
+            case "multiplicative_expression":
+                return printBinaryishExpression(path, options, print);
+            case "literal_expression":
+                return printLiteralExpression(path, options, print);
+            case "literal":
+            case "string_literal":
+            case "boolean_literal":
+                return printLiteral(path, options, print);
+            case "tuple_literal":
+                return printTupleLiteral(path, options, print);
+            case "predefined_type_expression":
+                return printPredefinedTypeExpression(path, options, print);
+            case "qualified_alias_member_expression":
+                return printQualifiedAliasMemberExpression(path, options, print);
+            case "literal_access_expression":
+                return printLiteralAccessExpression(path, options, print);
+            case "primary_expression_start":
+                return printPrimaryExpressionStart(path, options, print);
+            case "unary_expression":
+                return printUnaryExpression(path, options, print);
+            case "tuple_expression":
+                return printTupleExpression(path, options, print);
+            case "parenthesis_expressions":
+                return printParenthesisExpression(path, options, print);
+            case "simple_name_expression":
+                return printSimpleNameExpression(path, options, print);
+            case "namespace_member_declarations":
+                return printNamespaceMemberDeclarations(path, options, print);
+            case "namespace_member_declaration":
+                return printNamespaceMemberDeclaration(path, options, print);
+            case "type_declaration":
+                return printTypeDeclaration(path, options, print);
+            case "namespace_declaration":
+                return printNamespaceDeclaration(path, options, print);
+            case "interface_type_list":
+                return printInterfaceTypeList(path, options, print);
+            case "interface_base":
+            case "class_base":
+            case "enum_base":
+            case "struct_interfaces":
+                return printStructBase(path, options, print);
+            case "qualified_identifier":
+                return printQualifiedIdentifier(path, options, print);
+            case "qualified_alias_member":
+                return printQualifiedAliasMember(path, options, print);
+            case "all_member_modifiers":
+                return printAllMemberModifiers(path, options, print);
+            case "all_member_modifier":
+                return printAllMemberModifier(path, options, print);
+            case "accessor_modifier":
+                return printAccessorModifier(path, options, print);
+            case "class_member_declarations":
+            case "struct_member_declarations":
+                return printClassOrStructMemberDeclarations(path, options, print);
+            case "enum_member_declaration":
+                return printEnumMemberDeclaration(path, options, print);
+            case "local_function_declaration":
+                return printCommonMemberDeclaration(path, options, print);
+            case "common_member_declaration":
+                return printCommonMemberDeclaration(path, options, print);
+            case "constructor_declaration":
+            case "destructor_definition":
+                return printMethodDeclaration(path, options, print);
+            case "constructor_initializer":
+                return printConstructorInitializer(path, options, print);
+            case "arg_declaration":
+                return printArgDeclaration(path, options, print);
+            case "constant_declaration":
+                return printConstantDeclaration(path, options, print);
+            case "constant_declarators":
+                return printConstantDeclarators(path, options, print);
+            case "constant_declarator":
+                return printConstantDeclarator(path, options, print);
+            case "interface_definition":
+                return printInterfaceDefinition(path, options, print);
+            case "type_parameter_list":
+            case "variant_type_parameter_list":
+                return printTypeParameterList(path, options, print);
+            case "type_parameter":
+            case "variant_type_parameter":
+                return printTypeParameter(path, options, print);
+            case "variance_annotation":
+                return printVarianceAnnotation(path, options, print);
+            case "delegate_definition":
+                return printDelegateDefinition(path, options, print);
+            case "return_type":
+                return printReturnType(path, options, print);
+            case "type_parameter_constraints_clauses":
+                return printTypeParameterConstraintsClauses(path, options, print);
+            case "type_parameter_constraints_clause":
+                return printTypeParameterConstraintsClause(path, options, print);
+            case "type_parameter_constraints":
+                return printTypeParameterConstraints(path, options, print);
+            case "constructor_constraint":
+                return printConstructorConstraint(path, options, print);
+            case "primary_constraint":
+                return printPrimaryConstraint(path, options, print);
+            case "secondary_constraints":
+                return printSecondaryConstraints(path, options, print);
+            case "assignment":
+                return printAssignment(path, options, print);
+            case "right_arrow":
+            case "right_shift":
+            case "right_shift_assignment":
+                return printRightOperator(path, options, print);
+            case "assignment_operator":
+            case "overloadable_operator":
+                return printOperator(path, options, print);
+            case "field_declaration":
+                return printFieldDeclaration(path, options, print);
+            case "event_declaration":
+                return printEventDeclaration(path, options, print);
+            case "statement_list":
+                return printStatementList(path, options, print);
+            case "variable_declaration_statement":
+                return printVariableDeclarationStatement(path, options, print);
+            case "function_declaration_statement":
+                return printFunctionDeclarationStatement(path, options, print);
+            case "labeled_statement":
+                return printLabeledStatement(path, options, print);
+            case "embedded_statement":
+                return printEmbeddedStatement(path, options, print);
+            case "local_variable_declaration":
+            case "variable_declarators":
+                return printVariableDeclaration(path, options, print);
+            case "local_constant_declaration":
+                return printLocalConstantDeclaration(path, options, print);
+            case "local_variable_identifier":
+                return printLocalVariableIdentifier(path, options, print);
+            case "expression_statement":
+                return printExpressionStatement(path, options, print);
+            case "empty_statement":
+                return printEmptyStatement(path, options, print);
+            case "empty_embedded_statement":
+                return printEmptyEmbeddedStatement(path, options, print);
+            case "local_variable_type":
+                return printLocalVariableType(path, options, print);
+            case "variable_declarator":
+            case "local_variable_declarator":
+                return printVariableDeclarator(path, options, print);
+            case "sizeof_expression":
+                return printSizeofExpression(path, options, print);
+            case "object_creation_expression":
+                return printObjectCreationExpression(path, options, print);
+            case "new_expression":
+                return printNewExpression(path, options, print);
+            case "base_access_expression":
+                return printBaseAccessExpression(path, options, print);
+            case "interpolated_verbatim_string":
+                return printInterpolatedVerbatimString(path, options, print);
+            case "interpolated_regular_string":
+                return printInterpolatedRegularString(path, options, print);
+            case "interpolated_regular_string_part":
+            case "interpolated_verbatim_string_part":
+                return printInterpolatedStringPart(path, options, print);
+            case "interpolated_string_expression":
+                return printInterpolatedStringExpression(path, options, print);
+            case "goto_statement":
+                return printGotoStatement(path, options, print);
+            case "switch_statement":
+                return printSwitchStatement(path, options, print);
+            case "switch_section":
+                return printSwitchSection(path, options, print);
+            case "switch_label":
+                return printSwitchLabel(path, options, print);
+            case "switch_filter":
+                return printSwitchFilter(path, options, print);
+            case "while_statement":
+                return printWhileStatement(path, options, print);
+            case "for_initializer":
+                return printForInitializer(path, options, print);
+            case "for_iterator":
+                return printForIterator(path, options, print);
+            case "foreach_statement":
+                return printForeachStatement(path, options, print);
+            case "do_statement":
+                return printDoStatement(path, options, print);
+            case "checked_statement":
+            case "unchecked_statement":
+            case "unsafe_statement":
+                return printCheckedStatement(path, options, print);
+            case "checked_expression":
+            case "unchecked_expression":
+                return printCheckedExpression(path, options, print);
+            case "default_value_expression":
+                return printDefaultValueExpression(path, options, print);
+            case "anonymous_method_expression":
+                return printAnonymousMethodExpression(path, options, print);
+            case "typeof_expression":
+                return printTypeofExpression(path, options, print);
+            case "yield_statement":
+                return printYieldStatement(path, options, print);
+            case "resource_acquisition":
+                return printResourceAcquisition(path, options, print);
+            case "try_statement":
+                return printTryStatement(path, options, print);
+            case "catch_clauses":
+                return printCatchClauses(path, options, print);
+            case "specific_catch_clause":
+            case "general_catch_clause":
+                return printCatchClause(path, options, print);
+            case "finally_clause":
+                return printFinallyClause(path, options, print);
+            case "exception_filter":
+                return printExceptionFilter(path, options, print);
+            case "object_or_collection_initializer":
+                return printObjectOrCollectionInitializer(path, options, print);
+            case "object_initializer":
+            case "anonymous_object_initializer":
+                return printObjectInitializer(path, options, print);
+            case "collection_initializer":
+                return printCollectionInitializer(path, options, print);
+            case "tuple_initializer":
+                return printTupleLiteral(path, options, print);
+            case "tuple_element_initializer":
+                return printTupleElementInitializer(path, options, print);
+            case "member_initializer_list":
+                return printMemberInitializerList(path, options, print);
+            case "member_initializer":
+                return printMemberInitializer(path, options, print);
+            case "initializer_value":
+                return printInitializerValue(path, options, print);
+            case "member_declarator_list":
+                return printMemberDeclaratorList(path, options, print);
+            case "member_declarator":
+                return printMemberDeclarator(path, options, print);
+            case "element_initializer":
+                return printElementInitializer(path, options, print);
+            case "expression_list":
+                return printExpressionList(path, options, print);
+            case "rank_specifier":
+                return printRankSpecifier(path, options, print);
+            case "generic_dimension_specifier":
+                return printGenericDimensionSpecifier(path, options, print);
+            case "array_initializer":
+                return printArrayInitializer(path, options, print);
+            case "local_variable_initializer":
+            case "variable_initializer":
+                return printVariableInitializer(path, options, print);
+            case "bracket_expression":
+                return printBracketExpression(path, options, print);
+            case "indexer_argument":
+                return printIndexerArgument(path, options, print);
+            case "query_expression":
+                return printQueryExpression(path, options, print);
+            case "from_clause":
+                return printFromClause(path, options, print);
+            case "query_body":
+                return printQueryBody(path, options, print);
+            case "query_body_clause":
+                return printQueryBodyClause(path, options, print);
+            case "where_clause":
+                return printWhereClause(path, options, print);
+            case "let_clause":
+                return printLetClause(path, options, print);
+            case "combined_join_clause":
+                return printCombinedJoinClause(path, options, print);
+            case "orderby_clause":
+                return printOrderByClause(path, options, print);
+            case "ordering":
+                return printOrdering(path, options, print);
+            case "select_or_group_clause":
+                return printSelectOrGroupClause(path, options, print);
+            case "query_continuation":
+                return printQueryContinuation(path, options, print);
+            case "interface_accessors":
+                return printInterfaceAccessors(path, options, print);
+            case "lambda_expression":
+                return printLambdaExpression(path, options, print);
+            case "anonymous_function_signature":
+                return printAnonymousFunctionSignature(path, options, print);
+            case "anonymous_function_body":
+                return printAnonymousFunctionBody(path, options, print);
+            case "implicit_anonymous_function_parameter_list":
+            case "explicit_anonymous_function_parameter_list":
+                return printAnonymousFunctionParameterList(path, options, print);
+            case "explicit_anonymous_function_parameter":
+                return printExplicitAnonymousFunctionParameter(path, options, print);
+            case "conversion_operator_declarator":
+                return printConversionOperatorDeclarator(path, options, print);
+            default:
+                throw new Error(`Unknown C# node: ${node.nodeType || node.constructor.name}`);
+        }
+    } finally {
+        levels = levels.replace(" ", "");
+        if (doIsFirst) {
+            console.log(output);
+        }
     }
 }
 

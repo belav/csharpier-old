@@ -89,8 +89,8 @@ namespace Insite.Spire.Services
                     .ToArray();
 
             return this
-                .CreateResult(this
-                    .GetPageVariantVersion(pageVersions, siteContext),
+                .CreateResult(
+                this.GetPageVariantVersion(pageVersions, siteContext),
                 unitOfWork,
                 siteContext,
                 null);
@@ -127,7 +127,8 @@ namespace Insite.Spire.Services
                 unitOfWork
                     .GetRepository<Node>()
                     .GetTableAsNoTracking()
-                    .Where(node =>
+                    .Where(
+                    node =>
                         node.WebsiteId == siteContext.WebsiteDto.Id &&
                         node.Type == type)
                     .Select(node => node.Id);
@@ -137,7 +138,8 @@ namespace Insite.Spire.Services
             return unitOfWork
                 .GetRepository<PageUrl>()
                 .GetTableAsNoTracking()
-                .Where(pageUrl =>
+                .Where(
+                pageUrl =>
                     nodeQuery.Contains(pageUrl.NodeId) &&
                     pageUrl.LanguageId == siteContext.LanguageDto.Id &&
                     pageUrl.PublishOn <= now &&
@@ -200,8 +202,8 @@ namespace Insite.Spire.Services
                         this.GetNodeUrls(unitOfWork, siteContext, nodeId.Value);
                     var pageUrl =
                         allNodeUrls
-                            .FirstOrDefault(o =>
-                                o.LanguageId == siteContext.LanguageDto.Id)
+                            .FirstOrDefault(
+                            o => o.LanguageId == siteContext.LanguageDto.Id)
                             ?? allNodeUrls.First();
 
                     var redirectTo = $"{pageUrl.Url}?{queryString}";
@@ -236,7 +238,8 @@ namespace Insite.Spire.Services
             {
                 nodeId =
                     this
-                        .GetCatalogNodeId(unitOfWork,
+                        .GetCatalogNodeId(
+                        unitOfWork,
                         siteContext,
                         url,
                         isSwitchingLanguage,
@@ -262,7 +265,8 @@ namespace Insite.Spire.Services
             if (pageVersionJson != null)
             {
                 return this
-                    .CreateResult(pageVersionJson,
+                    .CreateResult(
+                    pageVersionJson,
                     unitOfWork,
                     siteContext,
                     url);
@@ -284,7 +288,8 @@ namespace Insite.Spire.Services
                 };
 
             return pageVersions
-                .Where(o =>
+                .Where(
+                o =>
                     !o.Page.IsDefaultVariant &&
                     o.Page.RuleManager != null &&
                     this.rulesEngine.Execute(o.Page, ruleObjects))
@@ -307,14 +312,16 @@ namespace Insite.Spire.Services
             var relativeUrlNoQuery =
                 url.Contains("?")
                     ? url
-                        .Substring(0,
+                        .Substring(
+                        0,
                         url.IndexOf("?", StringComparison.Ordinal))
                     : url;
             var urlParts = relativeUrlNoQuery.Trim('/', ' ').Split('/');
             var result =
                 this
                     .catalogService
-                    .GetCatalogPage(new GetCatalogPageParameter(relativeUrlNoQuery)
+                    .GetCatalogPage(
+                    new GetCatalogPageParameter(relativeUrlNoQuery)
                     { GetSubCategories = true });
             var activeLanguage = siteContext.LanguageDto.Id;
 
@@ -339,9 +346,8 @@ namespace Insite.Spire.Services
                         this
                             .catalogPathFinder
                             .Value
-                            .GetLanguageIdsForCatalogUrlPath(siteContext
-                                .WebsiteDto
-                                .Id,
+                            .GetLanguageIdsForCatalogUrlPath(
+                            siteContext.WebsiteDto.Id,
                             urlParts[0]);
                     if (
                         languageIds.Count != 0 &&
@@ -363,7 +369,8 @@ namespace Insite.Spire.Services
 
             if (result?.Product != null)
             {
-                return GetNodeIdByType(unitOfWork,
+                return GetNodeIdByType(
+                unitOfWork,
                 siteContext,
                 "ProductDetailsPage");
             }
@@ -374,7 +381,8 @@ namespace Insite.Spire.Services
                 result.SubCategories.Any()
             )
             {
-                return GetNodeIdByType(unitOfWork,
+                return GetNodeIdByType(
+                unitOfWork,
                 siteContext,
                 "CategoryDetailsPage");
             }
@@ -383,12 +391,12 @@ namespace Insite.Spire.Services
             if (
                 urlParts.Length == 2 &&
                 urlParts[0]
-                    .EqualsIgnoreCase(this
-                        .catalogPathBuilder
-                        .GetBrandRootPath())
+                    .EqualsIgnoreCase(
+                    this.catalogPathBuilder.GetBrandRootPath())
             )
             {
-                return GetNodeIdByType(unitOfWork,
+                return GetNodeIdByType(
+                unitOfWork,
                 siteContext,
                 "BrandDetailsPage");
             }
@@ -397,7 +405,8 @@ namespace Insite.Spire.Services
                 this
                     .catalogPathFinder
                     .Value
-                    .GetLanguageIdsForBrandPath(siteContext.WebsiteDto.Id,
+                    .GetLanguageIdsForBrandPath(
+                    siteContext.WebsiteDto.Id,
                     urlParts[0]);
 
             if (
@@ -448,7 +457,8 @@ namespace Insite.Spire.Services
             )
             {
                 // TODO this formats really weirdly
-                return GetNodeIdByType(unitOfWork,
+                return GetNodeIdByType(
+                unitOfWork,
                 siteContext,
                 "ProductListPage");
             }
@@ -466,7 +476,8 @@ namespace Insite.Spire.Services
             return unitOfWork
                 .GetRepository<Node>()
                 .GetTableAsNoTracking()
-                .Where(o =>
+                .Where(
+                o =>
                     o.WebsiteId == siteContext.WebsiteDto.Id &&
                     o.Type == pageType)
                 .Select(o => o.Id)
@@ -490,8 +501,8 @@ namespace Insite.Spire.Services
 
             var pageJson =
                 query
-                    .OrderByDescending(o =>
-                        o.PublishOn ?? DateTimeOffset.MaxValue)
+                    .OrderByDescending(
+                    o => o.PublishOn ?? DateTimeOffset.MaxValue)
                     .Select(o => o.Value)
                     .FirstOrDefault();
 
@@ -545,8 +556,8 @@ namespace Insite.Spire.Services
                     .GetRepository<PageVersion>()
                     .GetTableAsNoTracking()
                     .Expand(o => o.Page.RuleManager.RuleClauses)
-                    .Where(o =>
-                        o.Page.Node.WebsiteId == siteContext.WebsiteDto.Id);
+                    .Where(
+                    o => o.Page.Node.WebsiteId == siteContext.WebsiteDto.Id);
 
             query = this.ApplyPublishedFilter(query);
 
@@ -563,7 +574,8 @@ namespace Insite.Spire.Services
             }
 
             return query
-                .Where(o =>
+                .Where(
+                o =>
                     o.PublishOn != null &&
                     o.PublishOn < DateTimeProvider.Current.Now);
         }
@@ -634,7 +646,8 @@ namespace Insite.Spire.Services
         )
         {
             return retrievePageService
-                .GetPublishedPageUrlsByType(unitOfWork,
+                .GetPublishedPageUrlsByType(
+                unitOfWork,
                 siteContext,
                 "SignInPage")
                 .Select(o => o.Url)
@@ -678,9 +691,8 @@ namespace Insite.Spire.Services
             var getByUriResult =
                 this
                     .htmlRedirectPipeline
-                    .GetByUri(new GetByUriParameter {
-                        Uri = new Uri($"{baseUrl}{url}")
-                    });
+                    .GetByUri(
+                    new GetByUriParameter { Uri = new Uri($"{baseUrl}{url}") });
             PipelineHelper.VerifyResults (getByUriResult);
 
             return getByUriResult;
@@ -701,7 +713,8 @@ namespace Insite.Spire.Services
                 .GetRepository<PageUrl>()
                 .GetTableAsNoTracking()
                 .Where(where)
-                .Where(o =>
+                .Where(
+                o =>
                     o.WebsiteId == siteContext.WebsiteDto.Id &&
                     (
                     displayUnpublishedContent ||

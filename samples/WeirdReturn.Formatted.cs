@@ -6,7 +6,8 @@ namespace TheNamespace
         {
             if (true == false)
             {
-                return GetNodeIdByType(unitOfWork,
+                return GetNodeIdByType(
+                unitOfWork,
                 siteContext,
                 "ProductListPage");
             }

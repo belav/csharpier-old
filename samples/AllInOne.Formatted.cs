@@ -565,7 +565,8 @@ namespace My.Moy
             async void Wait()
             {
                 // await System.Threading.Tasks.Task.Foooooooooooooooooooo.Delay(0);
-                await SystemxThreadingxTasksxTaskxFooooooooooooooooooooxDelay(0);
+                await SystemxThreadingxTasksxTaskxFooooooooooooooooooooxDelay(
+                0);
             }
 
             void AsyncAnonymous() // C # 5 feature
@@ -573,7 +574,8 @@ namespace My.Moy
                 var task =
                     Task
                         .Factory
-                        .StartNew(async () =>
+                        .StartNew(
+                        async () =>
                         {
                             return await new WebClient()
                                 .DownloadStringTaskAsync("http://example.com");
@@ -962,11 +964,13 @@ namespace Comments.XmlComments.UndocumentedKeywords
             s = $@"\{p.Name}
                                    ""\";
             s =
-                $"Color [ R={func(b: 3):#0.##}, G={G:#0.##}, B={B:#0.##}, A={A:#0.##} ]";
+                $"Color [ R={func(
+                b: 3):#0.##}, G={G:#0.##}, B={B:#0.##}, A={A:#0.##} ]";
 
             Logging
                 .Log
-                .Error($"Some error message text: ({someVariableValue} did not work)");
+                .Error(
+                $"Some error message text: ({someVariableValue} did not work)");
 
             // nameof expressions
             if (x == null) throw new ArgumentNullException(nameof(x));
