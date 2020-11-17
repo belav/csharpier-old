@@ -20,6 +20,7 @@ class ThrowingErrorListener extends ErrorListener {
 }
 
 function parseCSharp(text) {
+    console.time("parse");
     const errorListener = new ThrowingErrorListener();
     const chars = new InputStream(text);
     const lexer = new CSharpLexer.CSharpLexer(chars);
@@ -40,6 +41,7 @@ function parseCSharp(text) {
                 token.channel == CSharpLexer.CSharpLexer.DIRECTIVE,
         )
         .map(token => buildComment(token));
+    console.timeEnd("parse");
     return result;
 }
 
