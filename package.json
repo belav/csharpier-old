@@ -27,6 +27,7 @@
   "devDependencies": {
     "@babel/core": "7.12.3",
     "@types/antlr4": "4.7.2",
+    "@types/is-alphanumerical": "^1.0.0",
     "@types/lodash": "4.14.165",
     "@types/prettier": "2.1.5",
     "awesome-typescript-loader": "5.2.1",
@@ -34,8 +35,8 @@
     "copy-webpack-plugin": "6.3.1",
     "jest": "26.6.3",
     "plop": "2.7.4",
-    "source-map-loader": "1.1.2",
     "rimraf": "3.0.2",
+    "source-map-loader": "1.1.2",
     "typescript": "4.0.5",
     "webpack": "5.4.0",
     "webpack-cli": "4.2.0"

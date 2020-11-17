@@ -2,8 +2,7 @@
 // TODO rename this to prettier-plugin-csharpier if I really release it, then prettier works with it automatically
 
 // @ts-nocheck
-import { printComment, printDanglingComments } from "./comments";
-import * as alphanumerical from "is-alphanumerical";
+import { printComment } from "./comments";
 import { doc, util } from "prettier";
 import { findAnyProperty, isSymbol, isType, findAllProperties, getDescendant } from "./helpers";
 import * as _ from "lodash";
@@ -26,56 +25,6 @@ function printIdentifier(path, options, print) {
 
 function printKeyword(path, options, print) {
     return path.call(print, "terminal", 0);
-}
-
-function reorderAndPrintUsingDirectives(path, options, print) {
-    // Broken with preprocessor directives.
-    const node = path.getValue();
-
-    const getUsingPath = parts => {
-        if (typeof parts === "string" && parts !== "using" && parts != "static" && alphanumerical(parts)) {
-            return parts;
-        } else if (parts.type === "group" || parts.type === "indent") {
-            return getUsingPath(parts.contents);
-        } else if (parts.type === "concat") {
-            return parts.parts.map(getUsingPath).join("");
-        } else {
-            return "";
-        }
-    };
-
-    const sortUsingDirectives = docs => {
-        for (const doc of docs) {
-            doc.usingPath = getUsingPath(doc);
-        }
-
-        const [systems, others] = _.map(
-            _.partition(docs, doc => doc.usingPath.startsWith("System")),
-            docs => _.sortBy(docs, ["usingPath"]),
-        );
-
-        return systems.concat(others);
-    };
-
-    const namespaces = findAnyProperty(node, "using_namespace_directive");
-    const aliases = findAnyProperty(node, "using_alias_directive");
-    const statics = findAnyProperty(node, "using_static_directive");
-
-    const docs = [namespaces, aliases, statics]
-        .filter(usings => usings)
-        .map(usings => join(hardline, sortUsingDirectives(path.map(print, usings))));
-
-    return join(doubleHardline, docs);
-}
-
-function printUsingDirectives(path, options, print) {
-    const node = path.getValue();
-
-    if (hasPreprocessorDirectives(node)) {
-        return join(hardline, path.map(print, "children"));
-    }
-
-    return reorderAndPrintUsingDirectives(path, options, print);
 }
 
 function printUsingNamespaceDirective(path, options, print) {
@@ -462,25 +411,6 @@ function printTypeDeclaration(path, options, print) {
     }
 
     return group(concat(docs));
-}
-
-function printStructDefinition(path, options, print) {
-    const node = path.getValue();
-    const identifier = path.call(print, "identifier", 0);
-    const base = findAnyProperty(node, "class_base", "struct_interfaces", "enum_base");
-    const body = findAnyProperty(node, "class_body", "struct_body", "enum_body");
-    const clauses = findAnyProperty(node, "type_parameter_constraints_clauses");
-    const head = [path.call(print, "children", 0), line, identifier];
-
-    if (base) {
-        head.push(line, path.call(print, base, 0));
-    }
-
-    if (clauses) {
-        head.push(indent(concat([line, path.call(print, "type_parameter_constraints_clauses", 0)])));
-    }
-
-    return group(concat([group(concat(head)), line, path.call(print, body, 0)]));
 }
 
 function printStructBase(path, options, print) {
@@ -2341,6 +2271,8 @@ const remappedTypes = {
     struct_body: "class_body",
     interface_body: "class_body",
     enum_body: "class_body",
+    struct_definition: "class_definition",
+    enum_definition: "class_definition",
 };
 
 function printNode(path, options, print) {
@@ -2366,8 +2298,6 @@ function printNode(path, options, print) {
         case "this_reference_expression":
         case "parameter_modifier":
             return printKeyword(path, options, print);
-        case "using_directives":
-            return printUsingDirectives(path, options, print);
         case "using_namespace_directive":
             return printUsingNamespaceDirective(path, options, print);
         case "method_member_name":
@@ -2499,10 +2429,6 @@ function printNode(path, options, print) {
             return printNamespaceDeclaration(path, options, print);
         case "interface_type_list":
             return printInterfaceTypeList(path, options, print);
-        case "class_definition":
-        case "struct_definition":
-        case "enum_definition":
-            return printStructDefinition(path, options, print);
         case "interface_base":
         case "class_base":
         case "enum_base":
@@ -2760,13 +2686,6 @@ function canAttachComment(node) {
 
 function getCommentChildNodes(node) {
     return node.children.filter(child => !isType(child, "terminal"));
-}
-
-function hasPreprocessorDirectives(node) {
-    return (
-        (node.comments && node.comments.find(child => isType(child, "directive"))) ||
-        (node.children && node.children.find(hasPreprocessorDirectives))
-    );
 }
 
 function handleOwnLineComments(comment /*, text, options, ast, isLastComment*/) {
