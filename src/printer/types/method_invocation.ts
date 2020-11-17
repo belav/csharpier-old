@@ -1,10 +1,15 @@
+import { Doc } from "prettier";
 import { findAnyProperty, PrintType } from "../helpers";
 import { concat, group, hardline, indent, join, softline, line, doubleHardline } from "../builders";
+import { argument_list } from "../types";
 
 export const print: PrintType = (path, options, print) => {
     const node = path.getValue();
-    const argumentList = findAnyProperty(node, "argument_list");
+    let stuff: Doc = softline;
+    // @ts-ignore
+    if (node["argument_list"]) {
+        stuff = path.call(print, "argument_list", 0);
+    }
 
-    // TODO something in here needs to change to deal with argument list
-    return group(concat(["(", softline, argumentList ? path.call(print, argumentList, 0) : softline, ")"]));
+    return group(concat(["(", stuff, ")"]));
 };

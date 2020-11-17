@@ -1,7 +1,8 @@
 public class ClassName
 {
-    void Method() {
+    void Method()
+    {
         lock (new object())
-                        ;
+            ;
     }
 }

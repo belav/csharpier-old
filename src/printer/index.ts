@@ -2250,10 +2250,10 @@ function printNode(path, options, print) {
         nodeType = remappedTypes[nodeType];
     }
 
-    output += levels + nodeType + (node.value ? ": " + node.value : "") + "\r\n";
-    levels += " ";
-
-    try {
+    // output += levels + nodeType + (node.value ? ": " + node.value : "") + "\r\n";
+    // levels += " ";
+    //
+    // try {
         if (types[nodeType]) {
             return types[nodeType](path, options, print);
         }
@@ -2641,12 +2641,12 @@ function printNode(path, options, print) {
             default:
                 throw new Error(`Unknown C# node: ${node.nodeType || node.constructor.name}`);
         }
-    } finally {
-        levels = levels.replace(" ", "");
-        if (doIsFirst) {
-            console.log(output);
-        }
-    }
+    // } finally {
+    //     levels = levels.replace(" ", "");
+    //     if (doIsFirst) {
+    //         console.log(output);
+    //     }
+    // }
 }
 
 function canAttachComment(node) {

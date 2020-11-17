@@ -90,10 +90,10 @@ namespace Insite.Spire.Services
 
             return this
                 .CreateResult(
-                this.GetPageVariantVersion(pageVersions, siteContext),
-                unitOfWork,
-                siteContext,
-                null);
+                    this.GetPageVariantVersion(pageVersions, siteContext),
+                    unitOfWork,
+                    siteContext,
+                    null);
         }
 
         public IList<PageModel>
@@ -128,9 +128,9 @@ namespace Insite.Spire.Services
                     .GetRepository<Node>()
                     .GetTableAsNoTracking()
                     .Where(
-                    node =>
-                        node.WebsiteId == siteContext.WebsiteDto.Id &&
-                        node.Type == type)
+                        node =>
+                            node.WebsiteId == siteContext.WebsiteDto.Id &&
+                            node.Type == type)
                     .Select(node => node.Id);
 
             var now = DateTimeProvider.Current.Now;
@@ -139,13 +139,14 @@ namespace Insite.Spire.Services
                 .GetRepository<PageUrl>()
                 .GetTableAsNoTracking()
                 .Where(
-                pageUrl =>
-                    nodeQuery.Contains(pageUrl.NodeId) &&
-                    pageUrl.LanguageId == siteContext.LanguageDto.Id &&
-                    pageUrl.PublishOn <= now &&
-                    (
-                    pageUrl.PublishUntil == null || pageUrl.PublishUntil > now
-                    ));
+                    pageUrl =>
+                        nodeQuery.Contains(pageUrl.NodeId) &&
+                        pageUrl.LanguageId == siteContext.LanguageDto.Id &&
+                        pageUrl.PublishOn <= now &&
+                        (
+                        pageUrl.PublishUntil == null ||
+                        pageUrl.PublishUntil > now
+                        ));
         }
 
         public RetrievePageResult
@@ -203,7 +204,7 @@ namespace Insite.Spire.Services
                     var pageUrl =
                         allNodeUrls
                             .FirstOrDefault(
-                            o => o.LanguageId == siteContext.LanguageDto.Id)
+                                o => o.LanguageId == siteContext.LanguageDto.Id)
                             ?? allNodeUrls.First();
 
                     var redirectTo = $"{pageUrl.Url}?{queryString}";
@@ -239,11 +240,11 @@ namespace Insite.Spire.Services
                 nodeId =
                     this
                         .GetCatalogNodeId(
-                        unitOfWork,
-                        siteContext,
-                        url,
-                        isSwitchingLanguage,
-                        out var retrievePageResult);
+                            unitOfWork,
+                            siteContext,
+                            url,
+                            isSwitchingLanguage,
+                            out var retrievePageResult);
                 if (retrievePageResult != null)
                 {
                     return retrievePageResult;
@@ -266,10 +267,10 @@ namespace Insite.Spire.Services
             {
                 return this
                     .CreateResult(
-                    pageVersionJson,
-                    unitOfWork,
-                    siteContext,
-                    url);
+                        pageVersionJson,
+                        unitOfWork,
+                        siteContext,
+                        url);
             }
 
             return this.NotFoundPage(unitOfWork, siteContext);
@@ -289,10 +290,10 @@ namespace Insite.Spire.Services
 
             return pageVersions
                 .Where(
-                o =>
-                    !o.Page.IsDefaultVariant &&
-                    o.Page.RuleManager != null &&
-                    this.rulesEngine.Execute(o.Page, ruleObjects))
+                    o =>
+                        !o.Page.IsDefaultVariant &&
+                        o.Page.RuleManager != null &&
+                        this.rulesEngine.Execute(o.Page, ruleObjects))
                 .Select(o => o.Value)
                 .FirstOrDefault()
                 ?? pageVersions
@@ -313,16 +314,17 @@ namespace Insite.Spire.Services
                 url.Contains("?")
                     ? url
                         .Substring(
-                        0,
-                        url.IndexOf("?", StringComparison.Ordinal))
+                            0,
+                            url.IndexOf("?", StringComparison.Ordinal))
                     : url;
             var urlParts = relativeUrlNoQuery.Trim('/', ' ').Split('/');
             var result =
                 this
                     .catalogService
                     .GetCatalogPage(
-                    new GetCatalogPageParameter(relativeUrlNoQuery)
-                    { GetSubCategories = true });
+                        new GetCatalogPageParameter(
+                                relativeUrlNoQuery)
+                        { GetSubCategories = true });
             var activeLanguage = siteContext.LanguageDto.Id;
 
             retrievePageResult = null;
@@ -347,8 +349,8 @@ namespace Insite.Spire.Services
                             .catalogPathFinder
                             .Value
                             .GetLanguageIdsForCatalogUrlPath(
-                            siteContext.WebsiteDto.Id,
-                            urlParts[0]);
+                                siteContext.WebsiteDto.Id,
+                                urlParts[0]);
                     if (
                         languageIds.Count != 0 &&
                         !languageIds.Contains(activeLanguage)
@@ -370,9 +372,9 @@ namespace Insite.Spire.Services
             if (result?.Product != null)
             {
                 return GetNodeIdByType(
-                unitOfWork,
-                siteContext,
-                "ProductDetailsPage");
+                    unitOfWork,
+                    siteContext,
+                    "ProductDetailsPage");
             }
 
             if (
@@ -382,9 +384,9 @@ namespace Insite.Spire.Services
             )
             {
                 return GetNodeIdByType(
-                unitOfWork,
-                siteContext,
-                "CategoryDetailsPage");
+                    unitOfWork,
+                    siteContext,
+                    "CategoryDetailsPage");
             }
 
             // url with brand root and brand url segment is brand detail page
@@ -392,13 +394,13 @@ namespace Insite.Spire.Services
                 urlParts.Length == 2 &&
                 urlParts[0]
                     .EqualsIgnoreCase(
-                    this.catalogPathBuilder.GetBrandRootPath())
+                        this.catalogPathBuilder.GetBrandRootPath())
             )
             {
                 return GetNodeIdByType(
-                unitOfWork,
-                siteContext,
-                "BrandDetailsPage");
+                    unitOfWork,
+                    siteContext,
+                    "BrandDetailsPage");
             }
 
             var brandsLanguageIds =
@@ -406,8 +408,8 @@ namespace Insite.Spire.Services
                     .catalogPathFinder
                     .Value
                     .GetLanguageIdsForBrandPath(
-                    siteContext.WebsiteDto.Id,
-                    urlParts[0]);
+                        siteContext.WebsiteDto.Id,
+                        urlParts[0]);
 
             if (
                 brandsLanguageIds.Count != 0 &&
@@ -456,11 +458,10 @@ namespace Insite.Spire.Services
                 (urlParts.Length == 1 && urlParts[0].EqualsIgnoreCase("search"))
             )
             {
-                // TODO this formats really weirdly
                 return GetNodeIdByType(
-                unitOfWork,
-                siteContext,
-                "ProductListPage");
+                    unitOfWork,
+                    siteContext,
+                    "ProductListPage");
             }
 
             return null;
@@ -477,9 +478,9 @@ namespace Insite.Spire.Services
                 .GetRepository<Node>()
                 .GetTableAsNoTracking()
                 .Where(
-                o =>
-                    o.WebsiteId == siteContext.WebsiteDto.Id &&
-                    o.Type == pageType)
+                    o =>
+                        o.WebsiteId == siteContext.WebsiteDto.Id &&
+                        o.Type == pageType)
                 .Select(o => o.Id)
                 .FirstOrDefault();
         }
@@ -502,7 +503,7 @@ namespace Insite.Spire.Services
             var pageJson =
                 query
                     .OrderByDescending(
-                    o => o.PublishOn ?? DateTimeOffset.MaxValue)
+                        o => o.PublishOn ?? DateTimeOffset.MaxValue)
                     .Select(o => o.Value)
                     .FirstOrDefault();
 
@@ -557,7 +558,8 @@ namespace Insite.Spire.Services
                     .GetTableAsNoTracking()
                     .Expand(o => o.Page.RuleManager.RuleClauses)
                     .Where(
-                    o => o.Page.Node.WebsiteId == siteContext.WebsiteDto.Id);
+                        o =>
+                            o.Page.Node.WebsiteId == siteContext.WebsiteDto.Id);
 
             query = this.ApplyPublishedFilter(query);
 
@@ -575,9 +577,9 @@ namespace Insite.Spire.Services
 
             return query
                 .Where(
-                o =>
-                    o.PublishOn != null &&
-                    o.PublishOn < DateTimeProvider.Current.Now);
+                    o =>
+                        o.PublishOn != null &&
+                        o.PublishOn < DateTimeProvider.Current.Now);
         }
 
         private RetrievePageResult
@@ -613,8 +615,12 @@ namespace Insite.Spire.Services
                     Type = NavigationFilterType.RetrievingPage,
                     Page = result.Page,
                     SignInPageUrl =
-                        new Lazy<string>(() =>
-                                GetSignInPageUrl(this, unitOfWork, siteContext))
+                        new Lazy<string>(
+                                () =>
+                                    GetSignInPageUrl(
+                                        this,
+                                        unitOfWork,
+                                        siteContext))
                 };
 
             var filterResult =
@@ -647,9 +653,9 @@ namespace Insite.Spire.Services
         {
             return retrievePageService
                 .GetPublishedPageUrlsByType(
-                unitOfWork,
-                siteContext,
-                "SignInPage")
+                    unitOfWork,
+                    siteContext,
+                    "SignInPage")
                 .Select(o => o.Url)
                 .FirstOrDefault();
         }
@@ -692,7 +698,9 @@ namespace Insite.Spire.Services
                 this
                     .htmlRedirectPipeline
                     .GetByUri(
-                    new GetByUriParameter { Uri = new Uri($"{baseUrl}{url}") });
+                        new GetByUriParameter {
+                            Uri = new Uri($"{baseUrl}{url}")
+                        });
             PipelineHelper.VerifyResults (getByUriResult);
 
             return getByUriResult;
@@ -714,19 +722,19 @@ namespace Insite.Spire.Services
                 .GetTableAsNoTracking()
                 .Where(where)
                 .Where(
-                o =>
-                    o.WebsiteId == siteContext.WebsiteDto.Id &&
-                    (
-                    displayUnpublishedContent ||
-                    (
-                    o.PublishOn.HasValue &&
-                    o.PublishOn < DateTimeOffset.Now &&
-                    (
-                    o.PublishUntil == null ||
-                    o.PublishUntil > DateTimeOffset.Now
-                    )
-                    )
-                    ))
+                    o =>
+                        o.WebsiteId == siteContext.WebsiteDto.Id &&
+                        (
+                        displayUnpublishedContent ||
+                        (
+                        o.PublishOn.HasValue &&
+                        o.PublishOn < DateTimeOffset.Now &&
+                        (
+                        o.PublishUntil == null ||
+                        o.PublishUntil > DateTimeOffset.Now
+                        )
+                        )
+                        ))
                 .OrderByDescending(o => o.PublishOn ?? DateTimeOffset.MaxValue);
         }
     }

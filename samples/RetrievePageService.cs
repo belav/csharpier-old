@@ -285,7 +285,6 @@ namespace Insite.Spire.Services
                      result?.ProductLine != null ||
                      (urlParts.Length == 1 && urlParts[0].EqualsIgnoreCase("search")))
             {
-                // TODO this formats really weirdly
                 return GetNodeIdByType(unitOfWork, siteContext, "ProductListPage");
             }
 

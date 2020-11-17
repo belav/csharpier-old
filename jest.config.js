@@ -2,5 +2,6 @@
 // https://jestjs.io/docs/en/configuration.html
 
 module.exports = {
-    testPathIgnorePatterns: ["/node_modules/"]
+    testPathIgnorePatterns: ["/node_modules/", "/runTest.js"],
+    testMatch: ["**/tests/**/*.js"]
 };
