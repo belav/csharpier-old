@@ -5,41 +5,12 @@
 import { printComment, printDanglingComments } from "./comments";
 import * as alphanumerical from "is-alphanumerical";
 import { doc, util } from "prettier";
-import { findAnyProperty, isSymbol, isType, findAllProperties } from "./helpers";
+import { findAnyProperty, isSymbol, isType, findAllProperties, getDescendant } from "./helpers";
 import * as _ from "lodash";
 import * as types from "./types";
 
 const { concat, join, hardline, line, softline, trim, group, conditionalGroup, indent, dedentToRoot } = doc.builders;
-const doublehardline = concat([hardline, hardline]);
-const empty = "";
-
-function printCompilationUnit(path, options, print) {
-    const node = path.getValue();
-    const parts = [];
-
-    const externAliasDirectives = findAnyProperty(node, "extern_alias_directives");
-    const usingDirectives = findAnyProperty(node, "using_directives");
-    const globalAttributeSections = findAnyProperty(node, "global_attribute_section");
-    const namespaceMemberDeclarations = findAnyProperty(node, "namespace_member_declarations");
-
-    if (externAliasDirectives) {
-        parts.push(path.call(print, externAliasDirectives, 0));
-    }
-
-    if (usingDirectives) {
-        parts.push(path.call(print, usingDirectives, 0));
-    }
-
-    if (globalAttributeSections) {
-        parts.push(join(hardline, path.map(print, globalAttributeSections)));
-    }
-
-    if (namespaceMemberDeclarations) {
-        parts.push(path.call(print, namespaceMemberDeclarations, 0));
-    }
-
-    return concat([join(doublehardline, parts), line]);
-}
+const doubleHardline = concat([hardline, hardline]);
 
 function printExternAliasDirectives(path, options, print) {
     return join(hardline, path.map(print, "extern_alias_directive"));
@@ -67,9 +38,9 @@ function reorderAndPrintUsingDirectives(path, options, print) {
         } else if (parts.type === "group" || parts.type === "indent") {
             return getUsingPath(parts.contents);
         } else if (parts.type === "concat") {
-            return parts.parts.map(getUsingPath).join(empty);
+            return parts.parts.map(getUsingPath).join("");
         } else {
-            return empty;
+            return "";
         }
     };
 
@@ -94,7 +65,7 @@ function reorderAndPrintUsingDirectives(path, options, print) {
         .filter(usings => usings)
         .map(usings => join(hardline, sortUsingDirectives(path.map(print, usings))));
 
-    return join(doublehardline, docs);
+    return join(doubleHardline, docs);
 }
 
 function printUsingDirectives(path, options, print) {
@@ -105,26 +76,6 @@ function printUsingDirectives(path, options, print) {
     }
 
     return reorderAndPrintUsingDirectives(path, options, print);
-}
-
-function printNamespaceOrTypeName(path, options, print) {
-    const pathParts = [];
-
-    let currentPathPart = [];
-
-    path.each(path => {
-        const node = path.getValue();
-        if (isSymbol(node, ".")) {
-            pathParts.push(currentPathPart);
-            currentPathPart = [];
-        } else {
-            currentPathPart.push(print(path, options, print));
-        }
-    }, "children");
-
-    pathParts.push(currentPathPart);
-
-    return join(".", pathParts.map(concat));
 }
 
 function printUsingNamespaceDirective(path, options, print) {
@@ -468,7 +419,7 @@ function printSimpleNameExpression(path, options, print) {
 function printNamespaceMemberDeclarations(path, options, print) {
     const namespaceMemberDeclarations = path.map(print, "namespace_member_declaration");
 
-    return group(join(doublehardline, namespaceMemberDeclarations));
+    return group(join(doubleHardline, namespaceMemberDeclarations));
 }
 
 function printNamespaceMemberDeclaration(path, options, print) {
@@ -483,64 +434,6 @@ function printNamespaceDeclaration(path, options, print) {
     const namespaceBody = path.call(print, "namespace_body", 0);
 
     return group(concat([group(concat(["namespace", line, qualifiedIdentifier])), hardline, namespaceBody]));
-}
-
-function printBraceBody(path, options, print) {
-    const node = path.getValue();
-    const groupedDeclarations = findAnyProperty(node, "class_member_declarations", "namespace_member_declarations");
-
-    const lineSeparatedDeclarations = findAllProperties(
-        node,
-        "interface_member_declaration",
-        "struct_member_declaration",
-    );
-
-    const commaSeparatedDeclarations = findAllProperties(node, "enum_member_declaration");
-    const externAliasDirectives = findAnyProperty(node, "extern_alias_directives");
-    const usingDirectives = findAnyProperty(node, "using_directives");
-
-    const hasDeclarations =
-        lineSeparatedDeclarations.length ||
-        commaSeparatedDeclarations.length ||
-        groupedDeclarations ||
-        externAliasDirectives ||
-        usingDirectives;
-
-    const docs = ["{"];
-
-    docs.push(printDanglingComments(path, options));
-
-    if (hasDeclarations) {
-        const declarationParts = [];
-
-        if (externAliasDirectives) {
-            declarationParts.push(path.call(print, externAliasDirectives, 0));
-        }
-
-        if (usingDirectives) {
-            declarationParts.push(path.call(print, usingDirectives, 0));
-        }
-
-        if (groupedDeclarations) {
-            declarationParts.push(path.call(print, groupedDeclarations, 0));
-        }
-
-        if (lineSeparatedDeclarations.length) {
-            declarationParts.push(...path.map(print, lineSeparatedDeclarations));
-        }
-
-        if (commaSeparatedDeclarations.length) {
-            declarationParts.push(printCommaList(path.map(print, commaSeparatedDeclarations)));
-        }
-
-        docs.push(indent(concat([hardline, join(doublehardline, declarationParts)])));
-        docs.push(hardline);
-    } else {
-        docs.push(line);
-    }
-    docs.push("}");
-
-    return group(concat(docs));
 }
 
 function printTypeDeclaration(path, options, print) {
@@ -609,7 +502,7 @@ function printInterfaceTypeList(path, options, print) {
 }
 
 function printClassOrStructMemberDeclarations(path, options, print) {
-    return join(doublehardline, path.map(print, "children"));
+    return join(doubleHardline, path.map(print, "children"));
 }
 
 function printEnumMemberDeclaration(path, options, print) {
@@ -1313,49 +1206,6 @@ function printEventDeclaration(path, options, print) {
     return group(concat(docs));
 }
 
-function printAccessorDeclarations(path, options, print) {
-    const node = path.getValue();
-    const attributes = findAnyProperty(node, "attributes");
-    const accessorModifier = findAnyProperty(node, "accessor_modifier");
-    const accessorBody = findAnyProperty(node, "accessor_body", "block");
-    const accessorOperator = path.call(print, "terminal", 0);
-
-    const docs = [];
-
-    if (attributes) {
-        docs.push(path.call(print, attributes, 0), line);
-    }
-
-    if (accessorModifier) {
-        docs.push(path.call(print, accessorModifier, 0), line);
-    }
-
-    docs.push(accessorOperator);
-
-    if (accessorBody == "block") {
-        docs.push(line);
-    }
-
-    docs.push(path.call(print, accessorBody, 0));
-
-    const counterAccessorDeclarations = {
-        get: "set_accessor_declaration",
-        set: "get_accessor_declaration",
-        add: "remove_accessor_declaration",
-        remove: "add_accessor_declaration",
-    };
-
-    if (counterAccessorDeclarations[accessorOperator]) {
-        const counterAccessorDeclaration = findAnyProperty(node, counterAccessorDeclarations[accessorOperator]);
-
-        if (counterAccessorDeclaration) {
-            docs.push(line, path.call(print, counterAccessorDeclaration, 0));
-        }
-    }
-
-    return group(concat(docs));
-}
-
 function printInterfaceAccessors(path, options, print) {
     const node = path.getValue();
     const attributes = findAnyProperty(node, "attributes") ? path.map(print, "attributes") : [];
@@ -1466,7 +1316,7 @@ function printStatementList(path, options, print) {
 
         if (previousChild) {
             if (child.lineStart - previousChild.lineEnd > 1) {
-                docs.push(doublehardline);
+                docs.push(doubleHardline);
             } else {
                 docs.push(hardline);
             }
@@ -1510,7 +1360,7 @@ function printExpressionStatement(path, options, print) {
 }
 
 function printEmptyStatement() {
-    return empty;
+    return "";
 }
 
 function printEmptyEmbeddedStatement() {
@@ -1826,42 +1676,6 @@ function printDoStatement(path, options, print) {
     );
 }
 
-function printForStatement(path, options, print) {
-    const node = path.getValue();
-    const forInitializer = findAnyProperty(node, "for_initializer");
-    const expression = findAnyProperty(node, "expression");
-    const forIterator = findAnyProperty(node, "for_iterator");
-
-    return group(
-        concat([
-            group(
-                concat([
-                    "for",
-                    " ",
-                    "(",
-                    indent(
-                        group(
-                            concat([
-                                softline,
-                                join(
-                                    concat([";", line]),
-                                    [forInitializer, expression, forIterator].map(e =>
-                                        e ? path.call(print, e, 0) : empty,
-                                    ),
-                                ),
-                            ]),
-                        ),
-                    ),
-                    softline,
-                    ")",
-                ]),
-            ),
-            line,
-            path.call(print, "embedded_statement", 0),
-        ]),
-    );
-}
-
 function printForInitializer(path, options, print) {
     const node = path.getValue();
     const localVariableDeclaration = findAnyProperty(node, "local_variable_declaration");
@@ -2070,59 +1884,6 @@ function printGenericDimensionSpecifier(path) {
     const commas = node.children.length - 2;
 
     return concat(["<", ..._.repeat(",", commas), ">"]);
-}
-
-function printCapturingStatement(path, options, print) {
-    const node = path.getValue();
-    const capturedExpressions = findAllProperties(
-        node,
-        "expression",
-        "resource_acquisition",
-        "pointer_type",
-        "fixed_pointer_declarators",
-    );
-    const embeddedStatement = getDescendant(node, "embedded_statement");
-    const hasBraces = !!findAnyProperty(embeddedStatement, "block");
-
-    const docs = [
-        group(
-            concat([
-                path.call(print, "terminal", 0),
-                " ",
-                "(",
-                group(
-                    concat([
-                        indent(
-                            group(
-                                concat([
-                                    softline,
-                                    join(
-                                        " ",
-                                        capturedExpressions.map(expression => path.call(print, expression, 0)),
-                                    ),
-                                ]),
-                            ),
-                        ),
-                        softline,
-                    ]),
-                ),
-                ")",
-            ]),
-        ),
-    ];
-
-    const onlyContainsACapturingStatement =
-        !hasBraces && !!findAnyProperty(embeddedStatement, "using_statement", "fixed_statement", "lock_statement");
-
-    const statementDocs = path.call(print, "embedded_statement", 0);
-
-    if (hasBraces || onlyContainsACapturingStatement) {
-        docs.push(hardline, statementDocs);
-    } else {
-        docs.push(indent(group(concat([hardline, statementDocs]))));
-    }
-
-    return group(concat(docs));
 }
 
 function printYieldStatement(path, options, print) {
@@ -2569,6 +2330,17 @@ const remappedTypes = {
     numeric_type: "simple_type",
     integral_type: "simple_type",
     floating_point_type: "simple_type",
+    lock_statement: "using_statement",
+    fixed_statement: "using_statement",
+    set_accessor_declaration: "accessor_declarations",
+    get_accessor_declaration: "accessor_declarations",
+    event_accessor_declarations: "accessor_declarations",
+    add_accessor_declaration: "accessor_declarations",
+    remove_accessor_declaration: "accessor_declarations",
+    namespace_body: "class_body",
+    struct_body: "class_body",
+    interface_body: "class_body",
+    enum_body: "class_body",
 };
 
 function printNode(path, options, print) {
@@ -2583,10 +2355,7 @@ function printNode(path, options, print) {
         return types[nodeType](path, options, print);
     }
 
-    // TODO split these all apart, and squash this down? would need to detect if a file doesn't exist and then error
     switch (node.nodeType) {
-        case "compilation_unit":
-            return printCompilationUnit(path, options, print);
         case "extern_alias_directives":
             return printExternAliasDirectives(path, options, print);
         case "extern_alias_directive":
@@ -2601,8 +2370,6 @@ function printNode(path, options, print) {
             return printUsingDirectives(path, options, print);
         case "using_namespace_directive":
             return printUsingNamespaceDirective(path, options, print);
-        case "namespace_or_type_name":
-            return printNamespaceOrTypeName(path, options, print);
         case "method_member_name":
         case "unbound_type_name":
             return printUnboundTypeName(path, options, print);
@@ -2730,12 +2497,6 @@ function printNode(path, options, print) {
             return printTypeDeclaration(path, options, print);
         case "namespace_declaration":
             return printNamespaceDeclaration(path, options, print);
-        case "namespace_body":
-        case "class_body":
-        case "struct_body":
-        case "interface_body":
-        case "enum_body":
-            return printBraceBody(path, options, print);
         case "interface_type_list":
             return printInterfaceTypeList(path, options, print);
         case "class_definition":
@@ -2877,8 +2638,6 @@ function printNode(path, options, print) {
             return printSwitchFilter(path, options, print);
         case "while_statement":
             return printWhileStatement(path, options, print);
-        case "for_statement":
-            return printForStatement(path, options, print);
         case "for_initializer":
             return printForInitializer(path, options, print);
         case "for_iterator":
@@ -2900,10 +2659,6 @@ function printNode(path, options, print) {
             return printAnonymousMethodExpression(path, options, print);
         case "typeof_expression":
             return printTypeofExpression(path, options, print);
-        case "lock_statement":
-        case "using_statement":
-        case "fixed_statement":
-            return printCapturingStatement(path, options, print);
         case "yield_statement":
             return printYieldStatement(path, options, print);
         case "resource_acquisition":
@@ -2979,13 +2734,6 @@ function printNode(path, options, print) {
             return printSelectOrGroupClause(path, options, print);
         case "query_continuation":
             return printQueryContinuation(path, options, print);
-        case "accessor_declarations":
-        case "set_accessor_declaration":
-        case "get_accessor_declaration":
-        case "event_accessor_declarations":
-        case "add_accessor_declaration":
-        case "remove_accessor_declaration":
-            return printAccessorDeclarations(path, options, print);
         case "interface_accessors":
             return printInterfaceAccessors(path, options, print);
         case "lambda_expression":
@@ -3003,40 +2751,6 @@ function printNode(path, options, print) {
             return printConversionOperatorDeclarator(path, options, print);
         default:
             throw new Error(`Unknown C# node: ${node.nodeType || node.constructor.name}`);
-    }
-}
-
-function getDescendant(node, path) {
-    const pathAccessorRegex = /^([a-zA-Z_]+)(\[([0-9])\])?$/;
-    const pathParts = path.split(".");
-
-    let currentNode = node;
-
-    for (const pathPart of pathParts) {
-        const match = pathAccessorRegex.exec(pathPart);
-
-        if (!match) {
-            throw new Error(`Incorrect descendant path: ${path}`);
-        }
-
-        const rank = Number(match[3]) || 0;
-        const name = match[1];
-
-        if (!currentNode[name] || !currentNode[name][rank]) {
-            return null;
-        }
-
-        currentNode = currentNode[name][rank];
-    }
-
-    return currentNode;
-}
-
-// eslint-disable-next-line no-unused-vars
-function debugAtLine(node, line) {
-    if (node && node.lineStart <= line && node.lineEnd >= line) {
-        // eslint-disable-next-line no-debugger
-        debugger;
     }
 }
 
